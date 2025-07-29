@@ -20,38 +20,22 @@
         <li class="nav-item">
           <a class="nav-link" href="{% url 'course' %}">Course</a>
         </li>
+       
+        {% if user.is_authenticated %}
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'contact' %}">Contact</a>
-        </li>
-
-      {% if is_teacher %}
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'my_courses' %}">Admin Courses</a>
+          <a class="nav-link" href="{% url 'student_courses' %}">My Courses</a>
         </li>
         {% endif %}
-      </ul>
 
-      <ul class="navbar-nav ms-auto">
-        {% if not user.is_authenticated %}
+        {% if is_teacher %}
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'user_login' %}">login</a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'user_register' %}">register</a>
-        </li>
-
-        {% else %}
-        <li class="nav-item">
-          <a class="nav-link" href="#">{{user.username}}</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'user_logout' %}">logout</a>
+          <a class="nav-link" href="{% url 'teacher_courses' %}">Admin Courses</a>
         </li>
         {% endif %}
 
       </ul>
-      <form class="d-flex" action="{% url 'course' %}">
+
+<form class="d-flex" action="{% url 'course' %}">
         <input
           class="form-control me-2"
           type="search"
@@ -59,8 +43,30 @@
           name="q"
           aria-label="Search"
         />
-        <button class="btn btn-success" type="submit">Search</button>
+        
       </form>
+
+      <ul class="navbar-nav ms-auto">
+        {% if not user.is_authenticated %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'user_login' %}">Login</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'user_register' %}">Register</a>
+        </li>
+
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url "edit_profil" %}">{{user.username}}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'user_logout' %}">logout</a>
+        </li>
+        {% endif %}
+
+      </ul>
+      
     </div>
   </div>
 </nav>

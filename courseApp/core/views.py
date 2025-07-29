@@ -8,6 +8,3 @@ def home(request):
     categories_data = Category.objects.all()
     data = {"categories_data": categories_data, "course_data": course_data}
     return render(request, 'core/home.html',data)
-
-def contact(request):
-    return render(request, 'core/contact.html')

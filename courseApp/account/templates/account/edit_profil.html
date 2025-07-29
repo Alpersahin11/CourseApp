@@ -1,0 +1,155 @@
+{% extends "_layout.html" %} {% load static %} {% block content %}
+
+<form
+  method="POST"
+  enctype="multipart/form-data"
+  action="{% url 'edit_profil' %}"
+  novalidate
+>
+  {% csrf_token %} {{ profile_form.media }}
+  
+  {% if user_form.errors or profile_form.errors or password_form.errors %}
+  <div class="alert alert-danger">
+    <ul class="mb-0">
+      {% for field in user_form %} {% for error in field.errors %}
+      <li>{{ error }}</li>
+      {% endfor %} {% endfor %} {% for error in user_form.non_field_errors %}
+      <li>{{ error }}</li>
+      {% endfor %} {% for field in profile_form %} {% for error in field.errors %}
+      <li>{{ error }}</li>
+      {% endfor %} {% endfor %} {% for error in profile_form.non_field_errors %}
+      <li>{{ error }}</li>
+      {% endfor %} {% for field in password_form %} {% for error in field.errors %}
+      <li>{{ error }}</li>
+      {% endfor %} {% endfor %} {% for error in password_form.non_field_errors %}
+      <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="card overflow-hidden">
+    <div class="row no-gutters row-bordered row-border-light">
+      <!-- Sol menü -->
+      <div class="col-md-3 pt-0">
+        <div
+          class="list-group list-group-flush account-settings-links"
+          role="tablist"
+        >
+          <a
+            class="list-group-item list-group-item-action {% if active_tab == 'account-general' %}active{% endif %}"
+            href="?tab=account-general"
+            role="tab"
+            >General</a
+          >
+          <a
+            class="list-group-item list-group-item-action {% if active_tab == 'account-change-password' %}active{% endif %}"
+            href="?tab=account-change-password"
+            role="tab"
+            >Change password</a
+          >
+          <a
+            class="list-group-item list-group-item-action {% if active_tab == 'account-info' %}active{% endif %}"
+            href="?tab=account-info"
+            role="tab"
+            >Info</a
+          >
+        </div>
+      </div>
+
+      <!-- Sağ içerik -->
+      <div class="col-md-9">
+        <div class="tab-content">
+          <!-- General -->
+          <div
+            class="tab-pane fade {% if active_tab == 'account-general' %}show active{% endif %}"
+            id="account-general"
+            role="tabpanel"
+          >
+            <div class="card-body text-center">
+              {% if profile_form.instance.image %}
+              <img
+                src="{{ profile_form.instance.image.url }}"
+                alt="Profile Image"
+                class="rounded mb-3"
+                style="width: 150px; height: 150px; object-fit: cover"
+              />
+              {% else %}
+              <img
+                src="https://bootdey.com/img/Content/avatar/avatar1.png"
+                alt="Default Avatar"
+                class="rounded mb-3"
+                style="width: 150px; height: 150px; object-fit: cover"
+              />
+              {% endif %} {{ profile_form.image }}
+            </div>
+
+            <hr class="border-light m-0" />
+
+            <div class="card-body">
+              <div class="row justify-content-center">
+                <div class="col-md-8">
+                  {% if user_form.username %}
+                  <div class="mb-3 text-center">
+                    {{ user_form.username.label_tag }} {{ user_form.username }}
+                  </div>
+                  {% endif %}
+                  <div class="mb-3 text-center">
+                    {{ user_form.first_name.label_tag }} {{ user_form.first_name}}
+                  </div>
+                  <div class="mb-3 text-center">
+                    {{ user_form.last_name.label_tag }} {{ user_form.last_name}}
+                  </div>
+                  <div class="mb-3 text-center">
+                    {{ user_form.email.label_tag }} {{ user_form.email }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div
+            class="tab-pane fade {% if active_tab == 'account-change-password' %}show active{% endif %}"
+            id="account-change-password"
+            role="tabpanel"
+          >
+            <div class="mb-3">
+            {{ password_form.old_password.label_tag }} {{ password_form.old_password }}
+            </div>
+            <div class="mb-3">
+            {{ password_form.new_password1.label_tag }} {{ password_form.new_password1 }}
+            </div>
+            <div class="mb-3">
+            {{ password_form.new_password2.label_tag }} {{ password_form.new_password2 }}
+            </div>
+
+          </div>
+
+          <!-- Info -->
+          <div
+            class="tab-pane fade {% if active_tab == 'account-info' %}show active{% endif %}"
+            id="account-info"
+            role="tabpanel"
+          >
+            <div class="card-body pb-2">
+              <div class="mb-3 text-center">
+                {{ profile_form.bio.label_tag }} {{ profile_form.bio }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gizli alan -->
+  <input type="hidden" name="active_tab" value="{{ active_tab }}" />
+
+  <!-- Kaydet Butonu -->
+  <div class="text-end mt-3">
+    <button type="submit" class="btn btn-primary">Kaydet</button>
+  </div>
+</form>
+
+{% endblock %}
