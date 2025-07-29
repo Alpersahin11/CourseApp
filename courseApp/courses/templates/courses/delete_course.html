@@ -1,0 +1,31 @@
+{% extends "_layout.html" %} 
+{% load static %} 
+
+{% block title %} Courses{%endblock %} 
+
+{% block content %}
+
+
+<div class="container mt-3">
+
+    <div class="row">
+
+    <div class="col-12">
+    <form method="POST" action = {% url "delete_course" course.id  %} enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <p>
+            <strong>
+                {{course.title}} isimli kursu silmek istediğinze emin misiniz?
+            </strong>
+        </p>
+
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="{% url "my_courses" %}" class="btn btn-success">Cancel</a>
+    </form>
+    </div>
+   
+</div>
+</div>
+
+{% endblock %}

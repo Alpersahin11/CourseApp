@@ -1,0 +1,27 @@
+{% extends "_layout.html" %} {% load static %} {% block title %} CourseApp Home
+{% endblock %} {% block content %}
+
+<div class="container">
+  <div class="row">
+
+    <div class="col-12">
+      <p class="text-center fs-2">
+        <strong>Welcome to the CourseApp!</strong>
+      </p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+        <div class="row justify-content-center">
+        {% for course in course_data %}
+            {% if course.is_active %}
+            {% include 'partials/_courseCard.html' %}
+            {% endif %}
+        {% endfor %}
+        </div>
+    </div>
+  </div>
+</div>
+  {% endblock %}
+

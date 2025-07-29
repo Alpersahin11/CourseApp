@@ -1,0 +1,14 @@
+{% extends "_layout.html" %} 
+
+{% load static %} {% block title %}
+{{ course.title }} {% endblock %} 
+
+
+{% block content %}
+
+
+<h5>{{kurs}}</h5>
+
+{% include 'partials/_courseCard.html' %}
+
+{% endblock %}

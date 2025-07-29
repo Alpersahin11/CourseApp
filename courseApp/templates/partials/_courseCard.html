@@ -1,0 +1,28 @@
+{% load static %}
+
+<div class="card mb-3">
+  <div class="row">
+    <div class="col-4">
+      <img src="{{course.img.url}}" class="me-3" alt="{{ course.title }}" />
+    </div>
+
+    <div class="col-8 mb-4">
+      <div class="d-flex flex-column flex-md-row">
+        <div
+          class="card-body d-flex flex-column justify-content-between flex-grow-1">
+          <div>
+            <a href={% url "course_details" course.tag %}> <h5 class="card-title">{{ course.title }}</h5> </a>
+              <p class="card-text">
+                {% if alone %}
+                  {{ course.description}}
+                {% else %}
+                  {{ course.description |truncatewords:5 }}
+                {% endif %}
+              </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
