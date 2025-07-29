@@ -5,14 +5,17 @@ from .models import Category, Course
 from django.core.paginator import Paginator ,EmptyPage, PageNotAnInteger
 from .form.course_edit import course_control
 from django.contrib.auth.decorators import user_passes_test
+from django.contrib import messages
+
+
+def login(user):
+    return user.is_superuser
+
+def is_teacher(user):
+    return user.groups.filter(name='Teacher').exists()
 
 
 
-def home(request):
-    course_data = Course.objects.all()
-    categories_data = Category.objects.all()
-    data = {"categories_data": categories_data, "course_data": course_data}
-    return render(request, 'home.html',data)
 
 def course(request):
     course_name = request.GET.get("q","")
@@ -60,36 +63,45 @@ def source_course(request):
     }
     return render(request, 'courses/course.html',context)
 
-def login(user):
-    return user.is_superuser
 
-@user_passes_test(login)
+@user_passes_test(is_teacher)
 def create_course(request):
     if request.method == "POST":
         form = course_control(request.POST, request.FILES)
         if form.is_valid():  # VALIDASYONU KONTROL ET
-            form.save()
+            course = form.save(commit=False)  
+            course.teacher = request.user    
+            course.save()  
             return redirect("my_courses")
         else:
-            print(form.errors)  # Hataları konsola yazdır (geliştirme için)
+            messages.error(request,"hata oldu")
+            return render(request, "courses/create_course.html", {"form": form})
+
+            
     else:
         form = course_control()
     return render(request, "courses/create_course.html", {"form": form})
 
-@user_passes_test(login)
+@user_passes_test(is_teacher)
 def edit_course(request,id):
     course = get_object_or_404(Course,pk = id)
 
     if request.method == "POST":
-        form = course_control(request.POST , instance=course)
-        form.save()
-        return redirect("my_courses")
+        form = course_control(request.POST, request.FILES, instance=course) 
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Success")
+            return redirect("my_courses")
+        else:
+            messages.error(request, "error")
+            return redirect("edit_course")
     else:
+        
         form = course_control(instance=course)
     
     return render(request, "courses/create_course.html", {"form": form})
 
-@user_passes_test(login)
+@user_passes_test(is_teacher)
 def delete_course(request,id):
 
     course = get_object_or_404(Course,pk = id)
@@ -100,10 +112,10 @@ def delete_course(request,id):
 
     return render(request, "courses/delete_course.html", {"course": course})
 
-@user_passes_test(login)
+@user_passes_test(is_teacher)
 def my_course(request):
     categories_data = Category.objects.all()
-    courses = Course.objects.filter()
+    courses = Course.objects.filter(teacher=request.user)
 
     page = Paginator(courses, 10)  # Sayfa başına 2 kurs göster
     page_number = request.GET.get('page', 1)
@@ -123,8 +135,25 @@ def my_course(request):
     }
     return render(request, 'courses/admin_courses.html',context)
 
-def contact(request):
-    return render(request, 'contact.html')
+
+def enroll_course(request, id):
+    if not request.user.is_authenticated:
+        return redirect("user_login")
+
+    course = get_object_or_404(Course, pk=id)
+
+    if course.teacher == request.user:
+        messages.error(request, "Kendi kursunuza kayıt olamazsınız.")
+        return redirect("course_details", id=course.id)
+
+    if course in request.user.profile.enrolled_courses.all():
+        messages.info(request, "Zaten bu kursa kayıtlısınız.")
+    else:
+        request.user.profile.enrolled_courses.add(course)
+        messages.success(request, "Kursa başarıyla kayıt oldunuz.")
+
+    return redirect("course_details", id=course.id)
+
 
 def course_details(request, id):
     categories_data = Category.objects.all()
