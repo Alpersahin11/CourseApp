@@ -7,17 +7,19 @@
 {% block content %}
 
 <!-- Slider -->
-<div id="carouselExample" class="carousel slide mb-5" data-bs-ride="carousel">
-  <div class="carousel-inner">
+<div id="carouselExample" class="carousel slide mb-5" data-bs-ride="carousel" style="width: 75%; margin: 0 auto;">
+  <div class="carousel-inner rounded-top-5" style="aspect-ratio: 16 / 9; overflow: hidden;">
     {% for course in slider_courses %}
       <div class="carousel-item {% if forloop.first %}active{% endif %}">
-        <img src="{{ course.img.url }}" class="d-block w-100" style="height: 400px; object-fit: cover;" alt="{{ course.title }}">
-        <div class="carousel-caption d-none d-md-block rounded ">
-          <h5>{{ course.title }}</h5>
+        <a href = {% url "course_details" course.tag %} > <img src="{{ course.img.url }}" class="d-block w-100 h-100 rounded-top-5" style="object-fit: cover;" alt="{{ course.title }}"> </a>
+        <div class="carousel-caption d-none d-md-block rounded-bottom p-2">
+          <h5 class="text-white">{{ course.title }}</h5>
         </div>
       </div>
     {% endfor %}
   </div>
+
+  <!-- Carousel Controls -->
   <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
     <span class="visually-hidden">Previous</span>
@@ -28,14 +30,6 @@
   </button>
 </div>
 
-<!-- Hero Section -->
-<div class="py-5 text-center bg-light mb-5">
-  <div class="container">
-    <h1 class="display-5 fw-bold">Welcome to CourseApp</h1>
-    <p class="lead">Explore hundreds of courses in software, design, business, and more.</p>
-    <a href="{% url 'course' %}" class="btn btn-primary btn-lg mt-3">Browse All Courses</a>
-  </div>
-</div>
 
 <!-- Popular Categories -->
 <div class="container mb-5">

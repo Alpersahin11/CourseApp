@@ -68,7 +68,9 @@ def source_course(request):
 def create_course(request):
     if request.method == "POST":
         form = course_control(request.POST, request.FILES)
-        if form.is_valid():  # VALIDASYONU KONTROL ET
+        if form.is_valid(): 
+            if form.warning:
+                messages.warning(request, form.warning)
             course = form.save(commit=False)  
             course.teacher = request.user    
             course.save()  
@@ -92,6 +94,8 @@ def edit_course(request,id):
     if request.method == "POST":
         form = course_control(request.POST, request.FILES, instance=course) 
         if form.is_valid():
+            if form.warning:
+                messages.warning(request, form.warning)
             form.save()
             messages.success(request, "Success")
             return redirect("teacher_courses")
