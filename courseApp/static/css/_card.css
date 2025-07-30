@@ -1,0 +1,57 @@
+/* _card.css içerisine ekle */
+
+.card {
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
+  background-color: #fff;
+}
+
+.card:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow:
+    0 0 15px 5px rgba(0, 139, 248, 0.6),
+    0 8px 20px rgb(0 139 248 / 0.5);
+  z-index: 10;
+}
+
+/* Resim üzerinde hafif parıltı efekti */
+.card-img-top {
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  transition: filter 0.3s ease;
+}
+
+.card:hover .card-img-top {
+  filter: brightness(1.1) saturate(1.2);
+}
+
+/* Buton stilini biraz değiştirelim */
+.card .btn-primary {
+  background-color: #008bf8;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.card .btn-primary:hover {
+  background-color: #005bb5;
+}
+
+/* Eğitmen ismi ve ikon */
+.card-body small {
+  color: #666;
+}
+
+/* Kart başlığı */
+.card-title {
+  color: #222;
+  font-weight: 700;
+}
+
+/* Kart açıklaması */
+.card-text {
+  color: #555;
+}

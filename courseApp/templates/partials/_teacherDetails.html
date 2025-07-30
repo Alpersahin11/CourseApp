@@ -1,0 +1,21 @@
+{% load static %}
+
+<div class="card shadow-sm rounded-4">
+  <div class="card-body text-center">
+
+    {% if course.teacher.profile.image %}
+      <img src="{{ course.teacher.profile.image.url }}" class="rounded-circle mb-3" width="120" height="120" alt="{{ course.teacher.profile.full_name }}">
+    {% else %}
+      <img src="{% static 'img/default-profile.png' %}" class="rounded-circle mb-3" width="120" height="120" alt="Default Profile">
+    {% endif %}
+
+    <h5 class="fw-bold fs-4 text-danger mb-1">
+      {{ course.teacher.profile.full_name }}
+    </h5>
+
+    <div class="text-muted mt-2" style="font-size: 0.95rem;">
+      {{ course.teacher.profile.bio|safe }}
+    </div>
+
+  </div>
+</div>

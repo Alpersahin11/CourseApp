@@ -21,7 +21,7 @@ def course(request):
     course_name = request.GET.get("q","")
     categories_data = Category.objects.all()
     courses = Course.objects.filter(title__contains = course_name)
-    page = Paginator(courses, 2)  # Sayfa başına 2 kurs göster
+    page = Paginator(courses, 9)  # Sayfa başına 2 kurs göster
     page_number = request.GET.get('page', 1)
 
     try:
@@ -72,26 +72,22 @@ def create_course(request):
             course = form.save(commit=False)  
             course.teacher = request.user    
             course.save()  
-            return redirect("my_courses")
+            return redirect("teacher_courses")
         else:
             messages.error(request,"hata oldu")
-            return render(request, "courses/create_course.html", {"form": form})
+            return render(request, "courses/create_courses.html", {"form": form})
 
             
     else:
         form = course_control()
     return render(request, "courses/create_course.html", {"form": form})
 
-@user_passes_test(is_teacher)
+@user_passes_test(is_teacher) 
 def edit_course(request,id):
     course = get_object_or_404(Course,pk = id)
     if  course.teacher != request.user:
         messages.error(request, "You do not have permission to edit this course.")
-        referer = request.META.get('HTTP_REFERER')
-        if referer:
-            return redirect(referer)
-        else:
-            return redirect("my_courses")
+        return redirect("student_courses")
         
     if request.method == "POST":
         form = course_control(request.POST, request.FILES, instance=course) 
@@ -101,7 +97,7 @@ def edit_course(request,id):
             return redirect("teacher_courses")
         else:
             messages.error(request, "error")
-            return redirect("edit_course")
+            return redirect("student_courses")
     else:
         
         form = course_control(instance=course)
@@ -111,7 +107,6 @@ def edit_course(request,id):
 @user_passes_test(is_teacher)
 def delete_course(request,id):
     course = get_object_or_404(Course,pk = id)
-
     if  course.teacher != request.user:
         messages.error(request, "You do not have permission to delete this course.")
         referer = request.META.get('HTTP_REFERER')
@@ -174,26 +169,6 @@ def student_courses(request):
     }
     return render(request, 'courses/study_courses.html',context)
 
-
-def enroll_course(request, id):
-    if not request.user.is_authenticated:
-        return redirect("user_login")
-
-    course = get_object_or_404(Course, pk=id)
-
-    if course.teacher == request.user:
-        messages.error(request, "Kendi kursunuza kayıt olamazsınız.")
-        return redirect("course_details", id=course.id)
-
-    if course in request.user.profile.enrolled_courses.all():
-        messages.info(request, "Zaten bu kursa kayıtlısınız.")
-    else:
-        request.user.profile.enrolled_courses.add(course)
-        messages.success(request, "Kursa başarıyla kayıt oldunuz.")
-
-    return redirect("course_details", id=course.id)
-
-
 def course_details(request, id):
     categories_data = Category.objects.all()
     course_data = Course.objects.all()
@@ -228,7 +203,7 @@ def categorie(request, id):
     
     courses = Course.objects.filter(category=category, is_active=True,title__contains = course_name)
 
-    page = Paginator(courses, 2)  
+    page = Paginator(courses, 9)  
     page_number = request.GET.get('page',1)
 
     try:
@@ -249,5 +224,24 @@ def categorie(request, id):
 
 
     return render(request, 'courses/course.html', context)
+
+def enroll_course(request, id):
+    if not request.user.is_authenticated:
+        return redirect("user_login")
+
+    course = get_object_or_404(Course, pk=id)
+
+    if course.teacher == request.user:
+        messages.error(request, "Kendi kursunuza kayıt olamazsınız.")
+        return redirect("course_details", id=course.id)
+
+    if course in request.user.profile.enrolled_courses.all():
+        messages.info(request, "Zaten bu kursa kayıtlısınız.")
+    else:
+        request.user.profile.enrolled_courses.add(course)
+        messages.success(request, "Kursa başarıyla kayıt oldunuz.")
+
+    return redirect("course_details", id=course.id)
+
 
     

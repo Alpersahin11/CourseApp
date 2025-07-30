@@ -1,27 +1,101 @@
-{% extends "_layout.html" %} 
-{% load static %} 
+{% extends "_layout.html" %}
+{% load static %}
 
-{% block title %} Courses{%endblock %} 
+{% block title %}Courses{% endblock %}
+
+{% block head %}  
+<style>
+  
+  .custom-form-container {
+    max-width: 450px;
+    margin: 3rem auto;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 16px rgb(0 0 0 / 0.1);
+  }
+
+  
+  .custom-form-container label.form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    display: block;
+  }
+
+  
+  .custom-form-container input.form-control,
+  .custom-form-container textarea.form-control,
+  .custom-form-container select.form-select {
+    width: 100% !important;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  
+  .custom-form-container input.form-control:focus,
+  .custom-form-container textarea.form-control:focus,
+  .custom-form-container select.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 8px rgba(13, 110, 253, 0.5);
+    outline: none;
+  }
+
+  
+  .custom-form-container .invalid-feedback {
+    text-align: center;
+    margin-top: 0.3rem;
+  }
+
+  
+  .custom-form-container .btn-submit-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 
-<form method="POST" enctype="multipart/form-data">
+<div class="custom-form-container">
+  <form method="POST" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
-    
+    {{ form.media }}
+
     {% for field in form %}
-        <div class="mb-3">
-           <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label> 
-            {{ field }}
-            {% if field.errors %}
-                <div class="text-danger">
-                    {{ field.errors }}
-                </div>
-            {% endif %}
+      <div class="mb-41 d-flex flex-column align-items-center">
+        <label for="{{ field.id_for_label }}" class="form-label w-100" style="max-width: 400px;">
+          {{ field.label }}
+          {% if field.field.required %}
+            <span class="text-danger">*</span>
+          {% endif %}
+        </label>
+
+        <div style="width: 100%; max-width: 400px;">
+          {{ field }}
         </div>
+
+        {% if field.help_text %}
+          <small class="form-text text-muted text-center d-block mt-1" style="max-width: 400px;">
+            {{ field.help_text }}
+          </small>
+        {% endif %}
+
+        {% if field.errors %}
+          <div class="invalid-feedback d-block" style="max-width: 400px;">
+            {% for error in field.errors %}
+              {{ error }}
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
     {% endfor %}
 
-    <button type="submit" class="btn btn-primary">Kaydet</button>
-</form>
-
-
+    <div class="btn-submit-wrapper">
+      <button type="submit" class="btn btn-primary px-5">Kaydet</button>
+    </div>
+  </form>
+</div>
 {% endblock %}

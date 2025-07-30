@@ -1,5 +1,9 @@
 {% extends "_layout.html" %} {% load static %} {% block title %} Courses
-{%endblock %} {% block content %}
+{%endblock %} 
+
+{% block head %}   <link rel="stylesheet" href="{% static 'css/_card.css' %}"> {% endblock head %} 
+
+{% block content %}
 
 <div class="container">
   <div class="row">
@@ -18,7 +22,13 @@
 
     <div class="col-9">
       <div class="row justify-content-center">
-        {% for course in page_obj.object_list %} {% include 'partials/_courseCard.html' %} {% endfor %}
+        <div class="container">
+        <div class="row justify-content-center">
+          {% for course in page_obj.object_list %}
+            {% include 'partials/_courseCard.html' %}
+          {% endfor %}
+        </div>
+      </div>
 
 
         <nav aria-label="Page navigation example ">

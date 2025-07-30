@@ -1,27 +1,73 @@
-{% extends "_layout.html" %} {% load static %} {% block title %} CourseApp Home
-{% endblock %} {% block content %}
+{% extends "_layout.html" %}
+{% load static %}
 
-<div class="container">
-  <div class="row">
+{% block title %} CourseApp Home {% endblock %}
+{% block head %}   <link rel="stylesheet" href="{% static 'css/_card.css' %}"> {% endblock head %} 
 
-    <div class="col-12">
-      <p class="text-center fs-2">
-        <strong>Welcome to the CourseApp!</strong>
-      </p>
-    </div>
-  </div>
+{% block content %}
 
-  <div class="row">
-    <div class="col-12">
-        <div class="row justify-content-center">
-        {% for course in course_data %}
-            {% if course.is_active %}
-            {% include 'partials/_courseCard.html' %}
-            {% endif %}
-        {% endfor %}
+<!-- Slider -->
+<div id="carouselExample" class="carousel slide mb-5" data-bs-ride="carousel">
+  <div class="carousel-inner">
+    {% for course in slider_courses %}
+      <div class="carousel-item {% if forloop.first %}active{% endif %}">
+        <img src="{{ course.img.url }}" class="d-block w-100" style="height: 400px; object-fit: cover;" alt="{{ course.title }}">
+        <div class="carousel-caption d-none d-md-block rounded ">
+          <h5>{{ course.title }}</h5>
         </div>
-    </div>
+      </div>
+    {% endfor %}
+  </div>
+  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Previous</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Next</span>
+  </button>
+</div>
+
+<!-- Hero Section -->
+<div class="py-5 text-center bg-light mb-5">
+  <div class="container">
+    <h1 class="display-5 fw-bold">Welcome to CourseApp</h1>
+    <p class="lead">Explore hundreds of courses in software, design, business, and more.</p>
+    <a href="{% url 'course' %}" class="btn btn-primary btn-lg mt-3">Browse All Courses</a>
   </div>
 </div>
-  {% endblock %}
 
+<!-- Popular Categories -->
+<div class="container mb-5">
+  <h3 class="mb-4">Popular Categories</h3>
+  <div class="row text-center">
+    {% for category in categories_data %}
+    <div class="col-6 col-md-3 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body position-relative">
+          <i class="bi bi-book fs-1 mb-2 text-primary"></i>
+          <h6 class="card-title">{{ category.name }}</h6>
+          <a href="{% url 'course_categorie' category.tag %}" class="stretched-link"></a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="container mb-5">
+  {% for group in categories_with_courses %}
+    <h4 class="mb-3">{{ group.category.name }}</h4>
+    <div class="row flex-nowrap overflow-auto">
+      {% for course in group.courses %}
+      
+          {% include 'partials/_courseCard.html' %}
+     
+      {% endfor %}
+    </div>
+    <hr>
+  {% endfor %}
+</div>
+
+
+{% endblock %}

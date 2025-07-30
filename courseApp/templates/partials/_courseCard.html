@@ -1,35 +1,34 @@
 {% load static %}
 
-<div class="card mb-3">
-  <div class="row">
-    <div class="col-4">
-      <img src="{{ course.img.url }}" class="card-img-top course-img" alt="{{ course.title }}">
-    </div>
-
-    <div class="col-8 mb-4">
-      <div class="d-flex flex-column flex-md-row">
-        <div class="card-body d-flex flex-column justify-content-between flex-grow-1">
-          <div>
-            <a href="{% url 'course_details' course.tag %}">
-              <h5 class="card-title">{{ course.title }}</h5>
-            </a>
-            <p class="card-text">
-              {% if alone %}
-                {{ course.description }}
-              {% else %}
-                {{ course.description|truncatewords:5 }}
-              {% endif %}
-            </p>
-          </div>
-          
-          <div class="mt-2">
-            <i class="bi bi-person-fill"></i> Eğitmen:
-            <span class="fw-semibold">{{ course.teacher.get_full_name }}</span>
-          </div>
-          <form action="" method = "POST">
-                <a href="{% url 'enroll_course' course.id %}" class="btn btn-danger mt-3 align-self-start">Join Course</a>
-          </form>
-        </div>
+<div class="col-md-6 col-lg-4 mb-4">
+  <div class="card course-card h-100 shadow-sm bg-light">
+    {% if course.img %}
+    <img
+      src="{{ course.img.url }}"
+      class="card-img-top course-img"
+      alt="{{ course.title }}"
+    />
+    {% endif %}
+    <div class="card-body d-flex flex-column justify-content-between">
+      <div>
+        <h5 class="card-title fw-semibold text-dark">{{ course.title }}</h5>
+        <p class="card-text text-muted small">
+          {{ course.description|truncatechars:100|safe }}
+        </p>
+      </div>
+      <div class="mt-3">
+        <p class="card-text mb-1">
+          <i class="bi bi-person-circle me-1 text-secondary"></i>
+          <small class="text-muted"
+            >Instructor: {{ course.teacher.get_full_name }}</small
+          >
+        </p>
+        <a
+          href="{% url 'course_details' course.tag %}"
+          class="btn btn-outline-primary w-100 btn-glow"
+        >
+          <i class="bi bi-arrow-right-circle me-1"></i> Details
+        </a>
       </div>
     </div>
   </div>

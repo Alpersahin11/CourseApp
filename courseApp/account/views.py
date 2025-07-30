@@ -78,7 +78,6 @@ def edit_profil(request):
         profile = Profile.objects.create(user=user)
 
     active_tab = request.GET.get('tab', 'account-general')
-    print(active_tab)
     user_form = UserForm(instance=user)
     profile_form = ProfileForm(instance=profile)
     password_form = CustomPasswordChangeForm(user=request.user)
@@ -100,7 +99,6 @@ def edit_profil(request):
 
         elif active_tab == 'account-change-password':
             password_form = PasswordChangeForm(user, request.POST)
-            print(user.password)
             if password_form.is_valid():
                 user = password_form.save()
                 update_session_auth_hash(request, user)
