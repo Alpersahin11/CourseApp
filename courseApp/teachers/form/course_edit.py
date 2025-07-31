@@ -1,4 +1,4 @@
-from ..models import Course
+from courses.models import Course
 from django.forms import ModelForm, TextInput, Textarea, ClearableFileInput, SelectMultiple
 from PIL import Image
 

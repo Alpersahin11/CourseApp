@@ -1,0 +1,9 @@
+{% load static %}
+
+<div class="card shadow-sm rounded-4">
+  <h2>{{ teacher.full_name }}</h2>
+<img src="{{ teacher.image.url }}" alt="{{ teacher.full_name }}" style="max-width: 200px;">
+<p>{{ teacher.bio|safe }}</p>
+
+  </div>
+</div>
