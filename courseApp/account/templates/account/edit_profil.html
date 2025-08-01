@@ -143,11 +143,10 @@
     </div>
   </div>
 
-  <!-- Gizli alan -->
   <input type="hidden" name="active_tab" value="{{ active_tab }}" />
 
-  <!-- Kaydet Butonu -->
   <div class="text-end mt-3">
+    {% if profile.is_teacher %} <a href = {% url "teacher_details" profile.user.id %} class="btn btn-primary">View Profile</a>{% endif %}
     <button type="submit" class="btn btn-primary">Kaydet</button>
   </div>
 </form>

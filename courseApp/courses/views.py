@@ -90,7 +90,7 @@ def course_details(request, id):
     categories_data = Category.objects.all()
     course_data = Course.objects.all()
 
-    course = [course for course in course_data if course.tag == id]
+    course = [course for course in course_data if course.slug == id]
     if course:
         return render(request, 'courses/course_details.html', {"course": course[0],"alone":True})
     else:
@@ -101,7 +101,7 @@ def course_details_id(request, id):
 
     course = [course for course in course_data if course.id == id]
     if len(course)>0:
-        reverse_url = reverse("course_details", kwargs={"id": course[0].tag})
+        reverse_url = reverse("course_details", kwargs={"id": course[0].slug})
     
         return redirect(reverse_url)
     else:

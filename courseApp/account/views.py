@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from django.urls import reverse
 
-from account.forms import CustomPasswordChangeForm, ProfileForm, UserForm
+from account.forms import CustomPasswordChangeForm, ProfileForm, UserForm,UserEditForm
 from .models import Profile 
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
@@ -14,7 +14,12 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect
 from django.contrib import messages
-
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .forms import UserForm
+from .models import Profile 
 
 def user_login(request):
 
@@ -40,32 +45,25 @@ def user_login(request):
 
 def user_register(request):
     if request.method == "POST":
-        user_username = request.POST.get("username")
-        user_email = request.POST.get("email")
-        user_password = request.POST.get("password")
-        user_repassword = request.POST.get("repassword")
+        user_form = UserForm(request.POST)
 
-        if user_password != user_repassword:
-            messages.error(request, "Passwords do not match")
-            return render(request, "account/register.html")
+        if user_form.is_valid():
+            # Şifreyi hash'le
+            user = user_form.save(commit=False)
+            user.password = make_password(user_form.cleaned_data['password'])
+            user.save()
 
-        if User.objects.filter(username=user_username).exists():
-            messages.error(request, "This username is already taken")
-            return render(request, "account/register.html")
+            # Profil oluştur (eğer varsa)
+            Profile.objects.create(user=user)
 
-        if User.objects.filter(email=user_email).exists():
-            messages.error(request, "This email is already registered")
-            return render(request, "account/register.html")
+            messages.success(request, "User created successfully!")
+            return redirect("user_login")
+        else:
+            messages.error(request, "Form is invalid.")
+    else:
+        user_form = UserForm()
 
-        # Kullanıcıyı oluştur
-        user = User.objects.create_user(username=user_username, email=user_email, password=user_password)
-
-        Profile.objects.create(user=user)
-
-        messages.success(request, "User created successfully!")
-        return redirect("user_login")
-    
-    return render(request, "account/register.html")
+    return render(request, "account/register.html", {"form": user_form})
 
 
 @login_required
@@ -77,8 +75,9 @@ def edit_profil(request):
     except Profile.DoesNotExist:
         profile = Profile.objects.create(user=user)
 
+    
     active_tab = request.GET.get('tab', 'account-general')
-    user_form = UserForm(instance=user)
+    user_form = UserEditForm(instance=user)
     profile_form = ProfileForm(instance=profile)
     password_form = CustomPasswordChangeForm(user=request.user)
 
@@ -86,7 +85,7 @@ def edit_profil(request):
         active_tab = request.POST.get('active_tab', 'account-general')  # formdan gelen sekme bilgisi
 
         if active_tab == 'account-general':
-            user_form = UserForm(request.POST, instance=user)
+            user_form = UserEditForm(request.POST, instance=user)
             profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
 
             if user_form.is_valid() and profile_form.is_valid():
@@ -122,6 +121,7 @@ def edit_profil(request):
         'profile_form': profile_form,
         'password_form': password_form,
         'active_tab': active_tab,
+        'profile':profile
     }
 
     return render(request, 'account/edit_profil.html', context)

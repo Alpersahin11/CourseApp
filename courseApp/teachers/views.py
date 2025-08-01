@@ -36,8 +36,10 @@ def home(request):
     return render(request, 'core/home.html', data)
 
 def teacher_details(request,id):
+    courses = Course.objects.filter(teacher = id).all()
     teacher = get_object_or_404(Profile, user__id=id, is_teacher=True)
-    return render(request, 'teachers/teacher_details.html', {"teacher": teacher})
+    
+    return render(request, 'teachers/teacher_details.html', {"teacher": teacher,"courses":courses})
 
 @user_passes_test(is_teacher)
 def create_course(request):

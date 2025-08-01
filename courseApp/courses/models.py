@@ -6,21 +6,33 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from ckeditor.fields import RichTextField
 
+from django.utils.text import slugify
+
+def unique_slugify(instance, value, slug_field_name='slug'):
+    slug = slugify(value)
+    model_class = instance.__class__
+    unique_slug = slug
+    extension = 1
+
+    while model_class.objects.filter(**{slug_field_name: unique_slug}).exists():
+        unique_slug = f"{slug}-{extension}"
+        extension += 1
+
+    return unique_slug
+
 class Category(models.Model):
     name = models.CharField(max_length=100)
-    tag = models.CharField(max_length=100, unique=True,blank=True)  
+    slug = models.SlugField(max_length=100, unique=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.tag:  
-            self.tag = self.name.replace(" ", "_")
-
+        if not self.slug:
+            self.slug = unique_slugify(self, self.name)
         self.name = self.name.capitalize()
-        self.tag = self.tag.lower()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
-    
+
 
 from django.db import models
 
@@ -30,13 +42,13 @@ class Course(models.Model):
     category = models.ManyToManyField(Category, related_name='courses')
     img = models.ImageField(upload_to='images/')
     date = models.DateField(auto_now=True)
-    tag = models.SlugField(max_length=100, unique=True, blank=True)
+    slug = models.SlugField(max_length=100, unique=True, blank=True)
     is_active = models.BooleanField(default=True)
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.tag:
-            self.tag = slugify(self.title)
+        if not self.slug:
+            self.slug = slugify(self.title)
 
         super().save(*args, **kwargs)
 
