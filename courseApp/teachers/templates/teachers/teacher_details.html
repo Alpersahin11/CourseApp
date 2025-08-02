@@ -2,33 +2,7 @@
 <link rel="stylesheet" href="{% static 'css/_card.css' %}" />
 {% endblock head %} {% block content %}
 
-<div class="card shadow-sm rounded-4">
-  <div class="card-body text-center">
-    {% if teacher.image %}
-    <img
-      src="{{ teacher.image.url }}"
-      class="rounded-circle mb-3"
-      width="120"
-      height="120"
-      alt="{{ teacher.full_name }}"
-    />
-    {% else %}
-    <img
-      src="{% static 'img/default-profile.png' %}"
-      class="rounded-circle mb-3"
-      width="120"
-      height="120"
-      alt="Default Profile"
-    />
-    {% endif %}
-
-    <h5 class="fw-bold fs-4 text-danger mb-1">{{ teacher.full_name }}</h5>
-
-    <div class="text-muted mt-2" style="font-size: 0.95rem">
-      {{ teacher.bio|safe }}
-    </div>
-  </div>
-</div>
+{% include "partials/_teacher_details.html" %}
 
 <div class="mt-4">
 <h5 class="mb-3">Courses by This Teacher</h5>

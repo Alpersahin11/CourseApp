@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponse
 from django.urls import reverse
 from .models import Category, Course
+from account.models import Profile 
 from django.core.paginator import Paginator ,EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
@@ -13,7 +14,8 @@ def login(user):
 def is_teacher(user):
     return user.groups.filter(name='Teacher').exists()
 
-
+def is_course_teacher(user, course):
+    return user == course.teacher
 
 def course(request):
     course_name = request.GET.get("q","")
@@ -87,14 +89,15 @@ def student_courses(request):
     return render(request, 'courses/study_courses.html',context)
 
 def course_details(request, id):
-    categories_data = Category.objects.all()
-    course_data = Course.objects.all()
+    course = get_object_or_404(Course, slug=id)
+    teacher = get_object_or_404(Profile, user__id=course.teacher.id, is_teacher=True)
 
-    course = [course for course in course_data if course.slug == id]
-    if course:
-        return render(request, 'courses/course_details.html', {"course": course[0],"alone":True})
-    else:
-        return HttpResponse("Course not found", status=404)
+    print(teacher.bio)
+    return render(request, 'courses/course_details.html', {
+        "course": course,
+        "alone": True,
+        "teacher": teacher
+    })
 
 def course_details_id(request, id):
     course_data = Course.objects.all()
@@ -113,7 +116,7 @@ def categorie(request, id):
 
     categories_data = Category.objects.all()
 
-    category = Category.objects.filter(tag=id).first()
+    category = Category.objects.filter(slug=id).first()
 
     if not category:
         return HttpResponse("Category not found", status=404)
@@ -161,4 +164,14 @@ def enroll_course(request, id):
     return redirect("course_details", id=course.id)
 
 
-    
+def course_detail(request, id):
+    if not request.user.is_authenticated:
+        return redirect("user_login")
+
+    course = get_object_or_404(Course, pk=id)
+
+    if course in request.user.profile.enrolled_courses.all() or course.teacher == request.user:
+        return render(request, "teachers/course_detail.html", {"course": course})
+    else:
+        messages.error(request, "You are not enrolled in this course.")
+        return redirect("course_details_id", id=id)  # Burada yönlendirme yapılıyor

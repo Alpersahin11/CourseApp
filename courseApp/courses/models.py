@@ -8,6 +8,8 @@ from ckeditor.fields import RichTextField
 
 from django.utils.text import slugify
 
+
+
 def unique_slugify(instance, value, slug_field_name='slug'):
     slug = slugify(value)
     model_class = instance.__class__

@@ -10,7 +10,7 @@
     <div class="col-md-4">
       <div class="card shadow rounded-4">
         <div class="card-body text-center">
-          {% include "partials/_teacherDetails.html" %}
+          {% include "partials/_teacher_details.html" %}
         </div>
       </div>
     </div>
@@ -61,7 +61,7 @@
 
         <!-- Başla Butonu -->
         <div class="mt-4">
-          <a href="#" class="btn btn-outline-primary btn-lg px-4">Kursa Başla</a>
+          <a href="{% url "enroll_course" course.id %}" class="btn btn-outline-primary btn-lg px-4">Kursa Başla</a>
         </div>
       </div>
     </div>

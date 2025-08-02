@@ -10,5 +10,6 @@ urlpatterns = [
     path('category/<id>', views.categorie, name='course_categorie'),
     path('<int:id>', views.course_details_id, name='course_details_id'),
     path('<str:id>', views.course_details, name='course_details'),
-   
+    path('lesson/<int:id>/', views.course_detail, name='course_detail'),
+
 ]
