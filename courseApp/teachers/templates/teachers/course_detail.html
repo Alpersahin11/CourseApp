@@ -4,84 +4,176 @@
 
 {% block content %}
 <div class="container py-4">
-  
-
   <div class="row">
+
     <!-- 🎥 Video Player -->
-    <div class="col-md-8">
-      <div class="card mb-3">
-        <div class="card-body">
-          <video id="mainVideo" width="100%" height="480" controls>
-            {% with first_video=course.sections.first.videos.first %}
-              {% if first_video %}
-                <source src="{{ first_video.video_file.url }}" type="video/mp4">
-              {% else %}
-                <p>No video available</p>
-              {% endif %}
-            {% endwith %}
-            Your browser does not support the video tag.
-          </video>
-        </div>
+   <div class="col-md-8">
+  <div class="card mb-3">
+    <div class="card-body">
+
+      <!-- 🎥 Video -->
+      <video id="mainVideo" width="100%" height="480" controls>
+        {% with first_video=course.sections.first.videos.first %}
+          {% if first_video %}
+            <source src="{{ first_video.video_file.url }}" type="video/mp4">
+          {% else %}
+            <p>No video available</p>
+          {% endif %}
+        {% endwith %}
+        Your browser does not support the video tag.
+      </video>
+
+      <!-- ✅ Süre ve tamamlandı bilgisi -->
+      <div class="d-flex justify-content-between mt-2">
+        <small class="text-muted">
+          ⏱ Süre: <span id="videoDuration">--:--</span>
+        </small>
+        <small id="completionStatus" class="text-success fw-bold d-none">
+          ✔ Tamamlandı
+        </small>
       </div>
+
+      <!-- ✅ Video başlığı -->
+      {% with first_video=course.sections.first.videos.first %}
+        {% if first_video %}
+          <div id="videoInfo" class="mt-2 text-muted small">
+            <i class="bi bi-film me-1"></i> <span id="videoTitle">{{ first_video.title }}</span>
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- ✅ Not alma alanı -->
+      <div class="mt-3">
+        <label for="videoNote" class="form-label fw-semibold">📝 Not Al</label>
+        <textarea id="videoNote" class="form-control" rows="3" placeholder="İzlerken önemli notlar alın..."></textarea>
+      </div>
+
     </div>
+  </div>
+</div>
+
 
     <!-- 📚 Section + Video List -->
-    <div class="col-md-4">
-      <div class="accordion" id="videoAccordion">
-        {% for section in course.sections.all %}
-          <div class="accordion-item">
-            <h2 class="accordion-header" id="heading{{ forloop.counter }}">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false"
-                aria-controls="collapse{{ forloop.counter }}">
-                {{ section.title }}
-              </button>
-            </h2>
-            <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse"
-              aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#videoAccordion">
-              <div class="accordion-body p-0">
-                <ul class="list-group list-group-flush">
-                  {% for video in section.videos.all %}
-                    <li class="list-group-item">
-                      <button class="btn btn-link p-0 text-start w-100 video-btn"
-                        data-video-url="{{ video.video_file.url }}">
-                        {{ video.order }}. {{ video.title }}
-                      </button>
-                    </li>
-                  {% endfor %}
-                </ul>
-              </div>
-            </div>
+<div class="col-md-4">
+  <div class="accordion" id="videoAccordion">
+    {% for section in course.sections.all %}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false"
+            aria-controls="collapse{{ forloop.counter }}">
+            {{ section.title }}
+          </button>
+        </h2>
+        <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse"
+          aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#videoAccordion">
+          <div class="accordion-body p-0">
+            <ul class="list-group list-group-flush">
+              {% for video in section.videos.all %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <button
+                    class="btn p-0 text-start w-100 text-truncate video-btn {% if forloop.first and forloop.parentloop.first %}active-video{% endif %}"
+                    data-video-url="{{ video.video_file.url }}"
+                    data-video-title="{{ video.title }}"
+                  >
+                    {{ video.title }}
+                  </button>
+                  {% if video.duration %}
+                    <small class="text-muted ms-2" style="white-space: nowrap;">
+                      {{ video.duration|time:"i:s" }}
+                    </small>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
           </div>
-        {% endfor %}
+        </div>
       </div>
-    </div>
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    {% endfor %}
+  </div>
+</div>
+
+
+  </div>
+
+  <!-- Ders başlığı ve açıklama -->
+  <div class="d-flex justify-content-between align-items-center my-4">
     <div>
       <h1>{{ course.title }}</h1>
       <p>{{ course.description|safe }}</p>
     </div>
+    {% if course.teacher == request.user %}
     <a href="{% url 'edit_course_structure' course.id %}" class="btn btn-warning">
       ✏️ Edit Course
     </a>
-  </div>
+    {% endif %}
   </div>
 </div>
 
-<!-- 🔧 Script to change video dynamically -->
+
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const videoButtons = document.querySelectorAll(".video-btn");
     const videoPlayer = document.getElementById("mainVideo");
+    const videoButtons = document.querySelectorAll(".video-btn");
+    const videoTitle = document.getElementById("videoTitle");
+    const videoDuration = document.getElementById("videoDuration");
+    const completionStatus = document.getElementById("completionStatus");
 
+    // Süre gösterimi
+    videoPlayer.addEventListener("loadedmetadata", function () {
+      const duration = videoPlayer.duration;
+      videoDuration.textContent = formatTime(duration);
+    });
+
+    // Video bittiğinde "Tamamlandı" etiketi göster
+    videoPlayer.addEventListener("ended", function () {
+      completionStatus.classList.remove("d-none");
+    });
+
+    // Video değiştiğinde etiketi gizle ve süreyi güncelle
     videoButtons.forEach(button => {
       button.addEventListener("click", function () {
         const url = this.getAttribute("data-video-url");
+        const title = this.getAttribute("data-video-title");
+
+        // Videoyu yükle
         videoPlayer.querySelector("source").setAttribute("src", url);
         videoPlayer.load();
         videoPlayer.play();
+
+        // Başlığı değiştir
+        if (videoTitle) {
+          videoTitle.textContent = title;
+        }
+
+        // Tamamlandı'yı sıfırla
+        if (completionStatus) {
+          completionStatus.classList.add("d-none");
+        }
+
+        // Aktif class ayarla
+        videoButtons.forEach(btn => btn.classList.remove("active-video"));
+        this.classList.add("active-video");
       });
     });
+
+    // Süre biçimlendirme fonksiyonu
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
   });
 </script>
+
+
+<!-- 💅 Stil: Aktif video için özel görünüm -->
+<style>
+  .active-video {
+    background-color: #e8f0fe;
+    font-weight: bold;
+    color: #0d6efd;
+  }
+</style>
 {% endblock %}

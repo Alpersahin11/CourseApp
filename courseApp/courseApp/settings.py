@@ -43,8 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'ckeditor',
-
+    'django_ckeditor_5',
     'courses',
     'account',
     'core',
@@ -81,6 +80,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'courseApp.wsgi.application'
 
@@ -148,4 +148,19 @@ MESSAGE_TAGS = {
     messages.ERROR: "alert-danger",
     messages.WARNING:"alert-warning",
     messages.SUCCESS:"alart-success"
+}
+
+
+CKEDITOR_5_CONFIGS = {
+    "default": {
+        "toolbar": "full",
+        "height": 300,
+        "width": "100%",
+    },
+    "extends": {
+        "toolbar": [
+            "bold", "italic", "link", "undo", "redo", "uploadImage"
+        ],
+        "height": 200,
+    },
 }

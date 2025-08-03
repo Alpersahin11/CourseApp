@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordChangeForm
 from .models import Profile
-from ckeditor.widgets import CKEditorWidget
+from django_ckeditor_5.fields import CKEditor5Widget
 
 class UserForm(forms.ModelForm):
     class Meta:
@@ -30,12 +30,10 @@ class UserEditForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['image','bio']  # modelinde olan alanlar
-
+        fields = ['image', 'bio']
         widgets = {
-            'bio': CKEditorWidget(),
+            'bio': CKEditor5Widget(config_name='extends'),  # veya 'default'
         }
-
 
 
 class CustomPasswordChangeForm(PasswordChangeForm):

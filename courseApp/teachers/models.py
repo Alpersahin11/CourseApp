@@ -21,15 +21,22 @@ class Section(models.Model):
     def __str__(self):
         return f"{self.course.title} - {self.title}"
 
+
 class Video(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="videos")
     title = models.CharField(max_length=200)
     video_file = models.FileField(upload_to=video_upload_path)
     order = models.PositiveIntegerField(default=0)
-
+    duration = models.DurationField(null=True, blank=True)  # süre burada
 
     class Meta:
         ordering = ['order']
 
     def __str__(self):
         return f"{self.section.title} - {self.title}"
+
+    def delete(self, *args, **kwargs):
+        # Video dosyasını sil
+        if self.video_file and os.path.isfile(self.video_file.path):
+            os.remove(self.video_file.path)
+        super().delete(*args, **kwargs)

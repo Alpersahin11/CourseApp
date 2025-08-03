@@ -13,6 +13,10 @@ from .models import Course, Section, Video
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.core.files.storage import FileSystemStorage
+from moviepy import VideoFileClip
+
+import os
+from django.core.files.storage import default_storage
 
 def login(user):
     return user.is_authenticated
@@ -206,10 +210,27 @@ def add_video(request, section_id):
     title = request.POST.get('title')
     video_file = request.FILES.get('video_file')
     order = section.videos.count()
-    Video.objects.create(section=section, title=title, video_file=video_file, order=order)
+
+    # Önce Video nesnesini kaydet (duration olmadan)
+    video = Video.objects.create(section=section, title=title, video_file=video_file, order=order)
+
+    # Video dosyasının tam yolu
+    video_path = default_storage.path(video.video_file.name)
+
+    # Süreyi hesapla
+    try:
+        clip = VideoFileClip(video_path)
+        video.duration = clip.duration  # saniye cinsinden float
+        clip.close()
+        # DurationField saniye değil, timedelta ister; o yüzden:
+        from datetime import timedelta
+        video.duration = timedelta(seconds=video.duration)
+        video.save()
+    except Exception as e:
+        print("Video duration could not be set:", e)
+
     messages.success(request, "Video added successfully.")
     return redirect('edit_course_structure', course_id=section.course.id)
-
 
 @login_required
 @user_passes_test(is_teacher)

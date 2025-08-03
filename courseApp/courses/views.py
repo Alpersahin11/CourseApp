@@ -156,7 +156,8 @@ def enroll_course(request, id):
         return redirect("course_details", id=course.id)
 
     if course in request.user.profile.enrolled_courses.all():
-        messages.info(request, "Zaten bu kursa kayıtlısınız.")
+        return redirect("course_detail", id=course.id)
+
     else:
         request.user.profile.enrolled_courses.add(course)
         messages.success(request, "Kursa başarıyla kayıt oldunuz.")
@@ -174,4 +175,4 @@ def course_detail(request, id):
         return render(request, "teachers/course_detail.html", {"course": course})
     else:
         messages.error(request, "You are not enrolled in this course.")
-        return redirect("course_details_id", id=id)  # Burada yönlendirme yapılıyor
+        return redirect("course_details_id", id=id)  

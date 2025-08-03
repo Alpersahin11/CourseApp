@@ -20,7 +20,9 @@
     />
     {% endif %}
 
-    <h5 class="fw-bold fs-4 text-danger mb-1">{{ teacher.full_name }}</h5>
+<a href="{% url 'teacher_details' teacher.id %}" style="text-decoration: none;">
+  <h5 class="fw-bold fs-4 text-danger mb-1">{{ teacher.full_name }}</h5>
+</a>
 
     <div class="text-muted mt-2" style="font-size: 0.95rem">
       {{ teacher.bio|safe }}

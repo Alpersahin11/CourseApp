@@ -1,8 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from courses.models import Course
-from ckeditor.fields import RichTextField
-from PIL import Image
+from django_ckeditor_5.fields import CKEditor5Field
 from PIL import Image
 from django.core.files.base import ContentFile
 from io import BytesIO
@@ -15,7 +14,7 @@ class Profile(models.Model):
     is_teacher = models.BooleanField(default=False)
     enrolled_courses = models.ManyToManyField(Course, related_name='enrolled_students', blank=True)
     image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
-    bio = RichTextField(blank=True, null=True)
+    bio = CKEditor5Field(blank=True, null=True)
 
 
     def __str__(self):

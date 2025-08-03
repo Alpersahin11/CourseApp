@@ -4,7 +4,7 @@ from django.utils.text import slugify
 from PIL import Image
 from django.conf import settings
 from django.contrib.auth.models import User
-from ckeditor.fields import RichTextField
+from django_ckeditor_5.fields import CKEditor5Field
 
 from django.utils.text import slugify
 
@@ -40,7 +40,7 @@ from django.db import models
 
 class Course(models.Model):
     title = models.CharField(max_length=100)
-    description = RichTextField(blank=True, null=True)
+    description = CKEditor5Field(blank=True, null=True)
     category = models.ManyToManyField(Category, related_name='courses')
     img = models.ImageField(upload_to='images/')
     date = models.DateField(auto_now=True)
