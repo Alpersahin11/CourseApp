@@ -12,7 +12,7 @@
     <div class="card-body">
 
       <!-- 🎥 Video -->
-      <video id="mainVideo" width="100%" height="480" controls>
+      <video id="mainVideo" data-id="{{ course.sections.first.videos.first.id }}" width="100%" height="480" controls>
         {% with first_video=course.sections.first.videos.first %}
           {% if first_video %}
             <source src="{{ first_video.video_file.url }}" type="video/mp4">
@@ -43,10 +43,8 @@
       {% endwith %}
 
       <!-- ✅ Not alma alanı -->
-      <div class="mt-3">
-        <label for="videoNote" class="form-label fw-semibold">📝 Not Al</label>
-        <textarea id="videoNote" class="form-control" rows="3" placeholder="İzlerken önemli notlar alın..."></textarea>
-      </div>
+    <textarea id="videoNote" name="note" class="form-control" rows="3" placeholder="İzlerken önemli notlar alın...">{{ existing_note }}</textarea>
+    <button id="saveNoteBtn" class="btn btn-success mt-2">Notu kaydet</button>
 
     </div>
   </div>
@@ -70,21 +68,27 @@
           <div class="accordion-body p-0">
             <ul class="list-group list-group-flush">
               {% for video in section.videos.all %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <button
-                    class="btn p-0 text-start w-100 text-truncate video-btn {% if forloop.first and forloop.parentloop.first %}active-video{% endif %}"
-                    data-video-url="{{ video.video_file.url }}"
-                    data-video-title="{{ video.title }}"
-                  >
-                    {{ video.title }}
-                  </button>
-                  {% if video.duration %}
-                    <small class="text-muted ms-2" style="white-space: nowrap;">
-                      {{ video.duration|time:"i:s" }}
-                    </small>
-                  {% endif %}
-                </li>
-              {% endfor %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <button
+                  class="btn p-0 text-start w-100 text-truncate video-btn {% if forloop.first and forloop.parentloop.first %}active-video{% endif %}"
+                  data-video-id="{{ video.id }}"
+                  data-video-url="{{ video.video_file.url }}"
+                  data-video-title="{{ video.title }}"
+                >
+                  {{ video.title }}
+                </button>
+
+                {% if video.duration %}
+                  <small class="text-muted ms-2" style="white-space: nowrap;">
+                    {{ video.duration|time:"i:s" }}
+                  </small>
+                {% endif %}
+
+                {% if video.id in watched_videos %}
+                  <span class="badge bg-success ms-2">İzlendi ✔</span>
+                {% endif %}
+              </li>
+            {% endfor %}
             </ul>
           </div>
         </div>
@@ -110,62 +114,161 @@
   </div>
 </div>
 
-
+<div id="notification" style="
+  display:none;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #198754;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  z-index: 9999;
+">
+  Not kaydedildi!
+</div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const videoPlayer = document.getElementById("mainVideo");
-    const videoButtons = document.querySelectorAll(".video-btn");
-    const videoTitle = document.getElementById("videoTitle");
-    const videoDuration = document.getElementById("videoDuration");
-    const completionStatus = document.getElementById("completionStatus");
+document.addEventListener("DOMContentLoaded", function () {
+  const videoPlayer = document.getElementById("mainVideo");
+  const videoButtons = document.querySelectorAll(".video-btn");
+  const videoTitle = document.getElementById("videoTitle");
+  const videoDuration = document.getElementById("videoDuration");
+  const completionStatus = document.getElementById("completionStatus");
 
-    // Süre gösterimi
-    videoPlayer.addEventListener("loadedmetadata", function () {
-      const duration = videoPlayer.duration;
-      videoDuration.textContent = formatTime(duration);
-    });
+  let currentVideoId = videoPlayer.getAttribute("data-id");
+  let hasSentWatchData = false;
 
-    // Video bittiğinde "Tamamlandı" etiketi göster
-    videoPlayer.addEventListener("ended", function () {
-      completionStatus.classList.remove("d-none");
-    });
+  // Süre gösterimi
+  videoPlayer.addEventListener("loadedmetadata", function () {
+    const duration = videoPlayer.duration;
+    videoDuration.textContent = formatTime(duration);
+    hasSentWatchData = false; // yeni video yüklendiğinde sıfırla
+  });
 
-    // Video değiştiğinde etiketi gizle ve süreyi güncelle
-    videoButtons.forEach(button => {
-      button.addEventListener("click", function () {
-        const url = this.getAttribute("data-video-url");
-        const title = this.getAttribute("data-video-title");
+  // Video izlenme takibi (%80 izlenince)
+  videoPlayer.addEventListener("timeupdate", function () {
+    const currentTime = videoPlayer.currentTime;
+    const duration = videoPlayer.duration;
+    const percentWatched = currentTime / duration;
 
-        // Videoyu yükle
-        videoPlayer.querySelector("source").setAttribute("src", url);
-        videoPlayer.load();
-        videoPlayer.play();
+    if (percentWatched >= 0.8 && !hasSentWatchData && currentVideoId) {
+      hasSentWatchData = true;
+      fetch(`/course/video/${currentVideoId}/watched/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCSRFToken()
+        },
+        body: JSON.stringify({})
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "ok") {
+          completionStatus.classList.remove("d-none");
 
-        // Başlığı değiştir
-        if (videoTitle) {
-          videoTitle.textContent = title;
+          // Tüm butonlardan önceki "İzlendi" etiketlerini kaldır
+          videoButtons.forEach(btn => {
+            const watchedBadge = btn.parentElement.querySelector(".watched-badge");
+            if (watchedBadge) watchedBadge.remove();
+          });
+
+          // Şu anki videonun butonuna "İzlendi" etiketi ekle
+          const currentBtn = Array.from(videoButtons).find(btn => btn.getAttribute("data-video-id") === currentVideoId);
+          if (currentBtn && !currentBtn.parentElement.querySelector(".watched-badge")) {
+            const badge = document.createElement("span");
+            badge.classList.add("watched-badge", "badge", "bg-success", "ms-2");
+            badge.textContent = "İzlendi ✔";
+            currentBtn.parentElement.appendChild(badge);
+          }
         }
-
-        // Tamamlandı'yı sıfırla
-        if (completionStatus) {
-          completionStatus.classList.add("d-none");
-        }
-
-        // Aktif class ayarla
-        videoButtons.forEach(btn => btn.classList.remove("active-video"));
-        this.classList.add("active-video");
-      });
-    });
-
-    // Süre biçimlendirme fonksiyonu
-    function formatTime(seconds) {
-      const mins = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60);
-      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      })
+      .catch(err => console.error("İzleme durumu kaydedilemedi:", err));
     }
   });
+
+  // Video butonuna tıklanınca video değiştir
+  videoButtons.forEach(button => {
+    button.addEventListener("click", function () {
+      const url = this.getAttribute("data-video-url");
+      const title = this.getAttribute("data-video-title");
+      currentVideoId = this.getAttribute("data-video-id");
+
+      videoPlayer.querySelector("source").setAttribute("src", url);
+      videoPlayer.setAttribute("data-id", currentVideoId);
+      videoPlayer.load();
+      videoPlayer.play();
+
+      if (videoTitle) {
+        videoTitle.textContent = title;
+      }
+
+      if (completionStatus) {
+        completionStatus.classList.add("d-none");
+      }
+
+      videoButtons.forEach(btn => btn.classList.remove("active-video"));
+      this.classList.add("active-video");
+    });
+  });
+
+  // Süre biçimlendirme fonksiyonu
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }
+
+  // CSRF token al
+  function getCSRFToken() {
+    const cookieValue = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('csrftoken='))
+      ?.split('=')[1];
+    return cookieValue || '';
+  }
+
+  // Not kaydet butonu varsa event bağla
+  const saveNoteBtn = document.getElementById('saveNoteBtn');
+  if (saveNoteBtn) {
+    saveNoteBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+
+      const note = document.getElementById('videoNote').value;
+      const videoId = document.getElementById('mainVideo').getAttribute('data-id');
+      const csrftoken = getCSRFToken();
+
+      fetch(`/course/save_note/${videoId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({note: note}),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'ok') {
+          const notification = document.getElementById('notification');
+          notification.style.display = 'block';
+
+          setTimeout(() => {
+            notification.style.display = 'none';
+          }, 2000);  // 2 saniye sonra kaybolur
+        }
+ else {
+          alert('Hata: ' + (data.message || 'Not kaydedilemedi.'));
+        }
+      })
+      .catch(() => alert('Sunucu hatası!'));
+    });
+  }
+});
 </script>
+
+
+
 
 
 <!-- 💅 Stil: Aktif video için özel görünüm -->

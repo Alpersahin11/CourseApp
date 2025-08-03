@@ -92,6 +92,8 @@ def create_course(request):
             course = form.save(commit=False)
             course.teacher = request.user
             course.save()
+            form.save_m2m()  
+
             return redirect("teacher_courses")
         else:
             messages.error(request, "There was an error.")

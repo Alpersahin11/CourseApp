@@ -49,6 +49,24 @@
   </div>
 </div>
 
+{% if recommend_courses %}
+
+<div class="container mb-5">
+  <h4 class="mb-3">Recommended Courses for You</h4>
+
+  <div class="row flex-nowrap overflow-auto pb-3" style="gap: 1rem;">
+    {% for course in recommend_courses %}
+        {% include 'partials/_courseCard.html' %}
+    {% endfor %}
+  </div>
+
+  <hr>
+</div>
+
+{% endif %}
+
+
+
 <div class="container mb-5">
   {% for group in categories_with_courses %}
     <h4 class="mb-3">{{ group.category.name }}</h4>
@@ -62,6 +80,10 @@
     <hr>
   {% endfor %}
 </div>
+
+
+
+
 
 
 {% endblock %}

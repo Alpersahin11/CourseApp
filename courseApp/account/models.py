@@ -5,7 +5,9 @@ from django_ckeditor_5.fields import CKEditor5Field
 from PIL import Image
 from django.core.files.base import ContentFile
 from io import BytesIO
-
+from django.db import models
+from django.utils import timezone
+from teachers.models import Video
 # Create your models here.
 
 
@@ -44,3 +46,30 @@ class Profile(models.Model):
 
             except Exception as e:
                 print("Görsel yeniden boyutlandırılırken hata:", e)
+
+
+class Enrollment(models.Model):
+    student = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'course')  
+
+    def __str__(self):
+        # Burada Profile içindeki User'ın username'ine erişiyoruz
+        return f"{self.student.user.username} - {self.course.title}"
+
+
+class VideoProgress(models.Model):
+    student = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    video = models.ForeignKey(Video, on_delete=models.CASCADE)
+    watched = models.BooleanField(default=False)
+    watched_at = models.DateTimeField(null=True, blank=True)
+    note = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ('student', 'video')
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.video.section.course.title} - {self.video.title}"

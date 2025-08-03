@@ -1,20 +1,15 @@
 from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate,login,logout
-from django.contrib.auth.models import User
 from django.contrib import messages
-from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib.auth.models import Group
 from account.forms import CustomPasswordChangeForm, ProfileForm, UserForm,UserEditForm
 from .models import Profile 
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -24,7 +19,7 @@ from .models import Profile
 def user_login(request):
 
     if request.user.is_authenticated:
-        return redirect("edit_profil")
+        return redirect("edit_profile")
 
     if request.method == "POST":
         
@@ -48,20 +43,17 @@ def user_register(request):
         user_form = UserForm(request.POST)
 
         if user_form.is_valid():
-            # Kullanıcıyı oluştur, şifreyi hash'le
             user = user_form.save(commit=False)
             user.password = make_password(user_form.cleaned_data['password'])
             user.save()
 
-            # Profil oluştur
             Profile.objects.create(user=user)
 
-            # Öğrenci grubuna ekle
             student_group, created = Group.objects.get_or_create(name="Student")
             user.groups.add(student_group)
 
             messages.success(request, "User created successfully!")
-            return redirect("user_login")
+            return redirect("edit_profile")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
@@ -83,7 +75,7 @@ def edit_profile(request):
     password_form = CustomPasswordChangeForm(user=request.user)
 
     if request.method == 'POST':
-        active_tab = request.POST.get('active_tab', 'account-general')  # active tab info from form
+        active_tab = request.POST.get('active_tab', 'account-general') 
 
         if active_tab == 'account-general':
             user_form = UserEditForm(request.POST, instance=user)
@@ -137,11 +129,11 @@ def become_instructor(request):
     profile.save()
 
     # Grup kontrolü ve ekleme
-    teacher_group, created = Group.objects.get_or_create(name="teacher")
+    teacher_group, created = Group.objects.get_or_create(name="Teacher")
     user.groups.add(teacher_group)
 
     messages.success(request, "You are now an instructor!")
-    return redirect('edit_profil')
+    return redirect('edit_profile')
 
 
 def user_logout(request):

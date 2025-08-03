@@ -70,4 +70,3 @@ class Course(models.Model):
         return self.title
     
 
-
