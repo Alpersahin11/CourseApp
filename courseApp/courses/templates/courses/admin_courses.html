@@ -3,6 +3,9 @@
 
 {% block title %}My Courses{% endblock %}
 
+{% csrf_token %}
+
+
 {% block content %}
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -15,6 +18,7 @@
     <table class="table table-hover align-middle text-center">
       <thead class="table-dark">
   <tr>
+    <th scope="col" style="width: 25px;">Active</th>
     <th scope="col" style="width: 150px;">Image</th>
     <th scope="col">Title</th>
     <th scope="col" style="max-width: 300px;">Description</th>
@@ -29,6 +33,15 @@
 <tbody>
   {% for course in page_obj.object_list %}
   <tr>
+    <td>
+  <input 
+    type="checkbox" 
+    id="toggleActive{{ course.id }}"
+    data-course-id="{{ course.id }}"
+    {% if course.is_active %}checked{% endif %}
+    onchange="toggleCourseActive(this)"
+  />
+</td>   
     <td>
       {% if course.img %}
         <img src="{{ course.img.url }}" alt="{{ course.title }}" class="img-thumbnail" style="max-width: 140px; height: auto;">
@@ -119,4 +132,78 @@
   </div>
   {% endif %}
 </div>
+
+<div id="statusMessage" style="
+  display:none;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #198754;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  z-index: 9999;
+"></div>
+
+<script>
+  
+  function getCSRFToken() {
+  const cookieValue = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrftoken='))
+    ?.split('=')[1];
+  return cookieValue || '';
+}
+
+function toggleCourseActive(checkbox) {
+  const courseId = checkbox.dataset.courseId;
+  const isChecked = checkbox.checked;
+
+  const statusMessage = document.getElementById('statusMessage');
+
+  fetch(`/teacher/toggle_active/${courseId}/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCSRFToken()
+    },
+    body: JSON.stringify({ is_active: isChecked })
+  })
+  .then(res => res.json())
+  .then(data => {
+    statusMessage.style.display = 'block';
+    if (data.status === "ok") {
+      statusMessage.textContent = data.message || "Status updated successfully!";
+      statusMessage.style.background = "#198754";  // yeşil
+      statusMessage.style.color = "white";
+     } else {
+    statusMessage.textContent = "Update failed: " + (data.message || "");
+    statusMessage.style.background = "#dc3545";  // kırmızı
+    statusMessage.style.color = "white";
+
+     // Checkbox'ı eski haline geri al
+      checkbox.checked = !checkbox.checked;
+    }
+
+    setTimeout(() => {
+      statusMessage.style.display = 'none';
+    }, 3000);
+  })
+  .catch(() => {
+    statusMessage.style.display = 'block';
+    statusMessage.textContent = "Server error!";
+    statusMessage.style.background = "#dc3545";
+    statusMessage.style.color = "white";
+
+    setTimeout(() => {
+      statusMessage.style.display = 'none';
+    }, 3000);
+  });
+}
+</script>
+
+
 {% endblock %}
+
+

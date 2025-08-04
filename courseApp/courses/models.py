@@ -45,7 +45,7 @@ class Course(models.Model):
     img = models.ImageField(upload_to='images/')
     date = models.DateField(auto_now=True)
     slug = models.SlugField(max_length=100, unique=True, blank=True)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
     def save(self, *args, **kwargs):

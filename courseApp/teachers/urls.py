@@ -5,7 +5,6 @@ from django.conf import settings
 from . import views
 
 urlpatterns = [
-    path('', views.home,name="teacher"),
     path('teach_course/', views.teacher_courses, name='teacher_courses'),
     path('create_course/', views.create_course, name='create_course'),
     path('edit_course/<int:id>', views.edit_course, name='edit_course'),
@@ -30,5 +29,6 @@ urlpatterns = [
     path('video/edit/<int:video_id>', views.edit_video, name='edit_video'),
 
     path('video/delete/<int:video_id>', views.delete_video, name='delete_video'),
-
+    
+    path("toggle_active/<int:course_id>/", views.toggle_course_active, name="toggle_course_active"),
 ]

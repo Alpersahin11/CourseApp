@@ -1,46 +1,54 @@
 {% extends "_layout.html" %}
 {% load static %}
 {% block title %}{{ course.title }}{% endblock %}
+{% load tempdict_extras %}
+{% block head %}
+
+<style>
+  .active-video {
+    background-color: #e8f0fe;
+    font-weight: bold;
+    color: #0d6efd;
+  }
+</style>
+
+{% endblock %}
+
 
 {% block content %}
 <div class="container py-4">
   <div class="row">
 
     <!-- 🎥 Video Player -->
-   <div class="col-md-8">
-  <div class="card mb-3">
+   <div class="col-md-9">
+  <div class="card mb-4">
     <div class="card-body">
 
       <!-- 🎥 Video -->
-      <video id="mainVideo" data-id="{{ course.sections.first.videos.first.id }}" width="100%" height="480" controls>
-        {% with first_video=course.sections.first.videos.first %}
-          {% if first_video %}
-            <source src="{{ first_video.video_file.url }}" type="video/mp4">
-          {% else %}
-            <p>No video available</p>
-          {% endif %}
-        {% endwith %}
-        Your browser does not support the video tag.
+      <video id="videoPlayer" class="w-100" controls>
+        <source src="{{ video.video_file.url }}" type="video/mp4">
       </video>
 
+
       <!-- ✅ Süre ve tamamlandı bilgisi -->
-      <div class="d-flex justify-content-between mt-2">
+      
+
+      <!-- ✅ Video başlığı -->
+      {% if video %}
+    <div class="d-flex justify-content-between mt-2">
         <small class="text-muted">
-          ⏱ Süre: <span id="videoDuration">--:--</span>
+          ⏱ Süre: <span id="videoDuration">{{formatted_duration}}</span>
         </small>
         <small id="completionStatus" class="text-success fw-bold d-none">
           ✔ Tamamlandı
         </small>
       </div>
 
-      <!-- ✅ Video başlığı -->
-      {% with first_video=course.sections.first.videos.first %}
-        {% if first_video %}
-          <div id="videoInfo" class="mt-2 text-muted small">
-            <i class="bi bi-film me-1"></i> <span id="videoTitle">{{ first_video.title }}</span>
-          </div>
-        {% endif %}
-      {% endwith %}
+      <div id="videoInfo" class="mt-2 text-muted small">
+        <i class="bi bi-film me-1"></i> <span id="videoTitle">{{ video.title }}</span>
+      </div>
+      {% endif %}
+
 
       <!-- ✅ Not alma alanı -->
     <textarea id="videoNote" name="note" class="form-control" rows="3" placeholder="İzlerken önemli notlar alın...">{{ existing_note }}</textarea>
@@ -52,7 +60,7 @@
 
 
     <!-- 📚 Section + Video List -->
-<div class="col-md-4">
+<div class="col-md-3">
   <div class="accordion" id="videoAccordion">
     {% for section in course.sections.all %}
       <div class="accordion-item">
@@ -68,28 +76,28 @@
           <div class="accordion-body p-0">
             <ul class="list-group list-group-flush">
               {% for video in section.videos.all %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <button
-                  class="btn p-0 text-start w-100 text-truncate video-btn {% if forloop.first and forloop.parentloop.first %}active-video{% endif %}"
-                  data-video-id="{{ video.id }}"
-                  data-video-url="{{ video.video_file.url }}"
-                  data-video-title="{{ video.title }}"
-                >
-                  {{ video.title }}
-                </button>
+              <li class="list-group-item p-1 border-0">
+                <a href="{% url 'course_detail' course.id %}?video_id={{ video.id }}"
+          class="btn d-flex justify-content-between align-items-center text-decoration-none w-100 {% if video.id == selected_video_id %}btn-success active{% endif %}">
+       <div class="d-flex align-items-center">
+                    <span class="me-2 text-truncate">{{ video.title }}</span>
+                    {% if video.id in watched_videos %}
+                      <span class="badge bg-success">Watched</span>
+                    {% endif %}
+                  </div>
 
-                {% if video.duration %}
-                  <small class="text-muted ms-2" style="white-space: nowrap;">
-                    {{ video.duration|time:"i:s" }}
-                  </small>
-                {% endif %}
+                  {% if video_durations|default:""|dict_get:video.id %}
+                    <small class="text-muted ms-2" style="white-space: nowrap;">
+                      {{ video_durations|dict_get:video.id }}
+                    </small>
+                  {% endif %}
+                  </a>
+                </li>
+              {% endfor %}
 
-                {% if video.id in watched_videos %}
-                  <span class="badge bg-success ms-2">İzlendi ✔</span>
-                {% endif %}
-              </li>
-            {% endfor %}
-            </ul>
+
+
+
           </div>
         </div>
       </div>
@@ -113,9 +121,8 @@
     {% endif %}
   </div>
 </div>
-
 <div id="notification" style="
-  display:none;
+  display: none;
   position: fixed;
   top: 20px;
   right: 20px;
@@ -124,145 +131,85 @@
   padding: 10px 20px;
   border-radius: 5px;
   box-shadow: 0 0 5px rgba(0,0,0,0.2);
-  z-index: 9999;
-">
-  Not kaydedildi!
+  z-index: 9999;">
+  Note saved!
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const videoPlayer = document.getElementById("mainVideo");
-  const videoButtons = document.querySelectorAll(".video-btn");
-  const videoTitle = document.getElementById("videoTitle");
-  const videoDuration = document.getElementById("videoDuration");
+  const saveNoteBtn = document.getElementById("saveNoteBtn");
   const completionStatus = document.getElementById("completionStatus");
-
-  let currentVideoId = videoPlayer.getAttribute("data-id");
   let hasSentWatchData = false;
 
-  // Süre gösterimi
-  videoPlayer.addEventListener("loadedmetadata", function () {
-    const duration = videoPlayer.duration;
-    videoDuration.textContent = formatTime(duration);
-    hasSentWatchData = false; // yeni video yüklendiğinde sıfırla
-  });
+  // ✅ Send "watched" info to backend when 80% viewed
+  if (videoPlayer) {
+    const currentVideoId = videoPlayer.getAttribute("data-id");
 
-  // Video izlenme takibi (%80 izlenince)
-  videoPlayer.addEventListener("timeupdate", function () {
-    const currentTime = videoPlayer.currentTime;
-    const duration = videoPlayer.duration;
-    const percentWatched = currentTime / duration;
+    videoPlayer.addEventListener("timeupdate", function () {
+      const currentTime = videoPlayer.currentTime;
+      const duration = videoPlayer.duration;
 
-    if (percentWatched >= 0.8 && !hasSentWatchData && currentVideoId) {
-      hasSentWatchData = true;
-      fetch(`/course/video/${currentVideoId}/watched/`, {
+      if (currentTime / duration >= 0.8 && !hasSentWatchData && currentVideoId) {
+        hasSentWatchData = true;
+
+        fetch(`/course/video/${currentVideoId}/watched/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken()
+          },
+          body: JSON.stringify({})
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "ok" && completionStatus) {
+            completionStatus.classList.remove("d-none");
+          }
+        })
+        .catch(err => console.error("Failed to mark as watched:", err));
+      }
+    });
+  }
+
+  // ✅ Save note when "Save" button clicked
+  if (saveNoteBtn) {
+    saveNoteBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+
+      const note = document.getElementById("videoNote").value;
+      const videoId = videoPlayer?.getAttribute("data-id");
+
+      fetch(`/course/save_note/${videoId}/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCSRFToken()
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({ note: note })
       })
       .then(res => res.json())
       .then(data => {
         if (data.status === "ok") {
-          completionStatus.classList.remove("d-none");
-
-          // Tüm butonlardan önceki "İzlendi" etiketlerini kaldır
-          videoButtons.forEach(btn => {
-            const watchedBadge = btn.parentElement.querySelector(".watched-badge");
-            if (watchedBadge) watchedBadge.remove();
-          });
-
-          // Şu anki videonun butonuna "İzlendi" etiketi ekle
-          const currentBtn = Array.from(videoButtons).find(btn => btn.getAttribute("data-video-id") === currentVideoId);
-          if (currentBtn && !currentBtn.parentElement.querySelector(".watched-badge")) {
-            const badge = document.createElement("span");
-            badge.classList.add("watched-badge", "badge", "bg-success", "ms-2");
-            badge.textContent = "İzlendi ✔";
-            currentBtn.parentElement.appendChild(badge);
+          const notification = document.getElementById("notification");
+          if (notification) {
+            notification.style.display = "block";
+            setTimeout(() => notification.style.display = "none", 2000);
           }
+        } else {
+          alert("Error: " + (data.message || "Note could not be saved."));
         }
       })
-      .catch(err => console.error("İzleme durumu kaydedilemedi:", err));
-    }
-  });
-
-  // Video butonuna tıklanınca video değiştir
-  videoButtons.forEach(button => {
-    button.addEventListener("click", function () {
-      const url = this.getAttribute("data-video-url");
-      const title = this.getAttribute("data-video-title");
-      currentVideoId = this.getAttribute("data-video-id");
-
-      videoPlayer.querySelector("source").setAttribute("src", url);
-      videoPlayer.setAttribute("data-id", currentVideoId);
-      videoPlayer.load();
-      videoPlayer.play();
-
-      if (videoTitle) {
-        videoTitle.textContent = title;
-      }
-
-      if (completionStatus) {
-        completionStatus.classList.add("d-none");
-      }
-
-      videoButtons.forEach(btn => btn.classList.remove("active-video"));
-      this.classList.add("active-video");
+      .catch(() => alert("Server error!"));
     });
-  });
-
-  // Süre biçimlendirme fonksiyonu
-  function formatTime(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   }
 
-  // CSRF token al
+  // ✅ Utility: Get CSRF token from cookie
   function getCSRFToken() {
-    const cookieValue = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('csrftoken='))
-      ?.split('=')[1];
-    return cookieValue || '';
-  }
-
-  // Not kaydet butonu varsa event bağla
-  const saveNoteBtn = document.getElementById('saveNoteBtn');
-  if (saveNoteBtn) {
-    saveNoteBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-
-      const note = document.getElementById('videoNote').value;
-      const videoId = document.getElementById('mainVideo').getAttribute('data-id');
-      const csrftoken = getCSRFToken();
-
-      fetch(`/course/save_note/${videoId}/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrftoken,
-        },
-        body: JSON.stringify({note: note}),
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'ok') {
-          const notification = document.getElementById('notification');
-          notification.style.display = 'block';
-
-          setTimeout(() => {
-            notification.style.display = 'none';
-          }, 2000);  // 2 saniye sonra kaybolur
-        }
- else {
-          alert('Hata: ' + (data.message || 'Not kaydedilemedi.'));
-        }
-      })
-      .catch(() => alert('Sunucu hatası!'));
-    });
+    const cookie = document.cookie
+      .split("; ")
+      .find(row => row.startsWith("csrftoken="));
+    return cookie ? cookie.split("=")[1] : "";
   }
 });
 </script>
@@ -271,12 +218,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-<!-- 💅 Stil: Aktif video için özel görünüm -->
-<style>
-  .active-video {
-    background-color: #e8f0fe;
-    font-weight: bold;
-    color: #0d6efd;
-  }
-</style>
+
+
+
 {% endblock %}

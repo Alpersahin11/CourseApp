@@ -1,5 +1,6 @@
+import json
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from .models import Section, Video
 from courses.models import Category, Course
@@ -14,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.core.files.storage import FileSystemStorage
 from moviepy import VideoFileClip
+from django.views.decorators.csrf import csrf_exempt
 
 import os
 from django.core.files.storage import default_storage
@@ -26,25 +28,6 @@ def is_teacher(user):
 
 
 
-def home(request):
-    categories = Category.objects.all()
-    categories_with_courses = []
-
-    for category in categories:
-        courses = Course.objects.filter(category=category, is_active=True)
-        if courses.exists():
-            categories_with_courses.append({
-                "category": category,
-                "courses": courses,
-            })
-
-    data = {
-        "categories_with_courses": categories_with_courses,
-        "slider_courses": Course.objects.filter(is_active=True)[:3],
-        "categories_data": categories,
-    }
-    return render(request, 'core/home.html', data)
-
 def teacher_details(request,id):
     courses = Course.objects.filter(teacher = id).all()
     teacher = get_object_or_404(Profile, user__id=id, is_teacher=True)
@@ -54,25 +37,6 @@ def teacher_details(request,id):
 def is_teacher(user):
     return user.groups.filter(name='Teacher').exists()
 
-@login_required
-def home(request):
-    categories = Category.objects.all()
-    categories_with_courses = []
-
-    for category in categories:
-        courses = Course.objects.filter(category=category, is_active=True)
-        if courses.exists():
-            categories_with_courses.append({
-                "category": category,
-                "courses": courses,
-            })
-
-    data = {
-        "categories_with_courses": categories_with_courses,
-        "slider_courses": Course.objects.filter(is_active=True)[:3],
-        "categories_data": categories,
-    }
-    return render(request, 'core/home.html', data)
 
 
 @login_required
@@ -137,12 +101,12 @@ def delete_course(request, id):
         if referer:
             return redirect(referer)
         else:
-            return redirect("my_courses")
+            return redirect("teacher_courses")
 
     if request.method == "POST":
         course.delete()
         messages.success(request, "Course deleted successfully.")
-        return redirect("my_courses")
+        return redirect("teacher_courses")
 
     return render(request, "courses/delete_course.html", {"course": course})
 
@@ -363,3 +327,34 @@ def move_video_section(request, video_id):
         video.save()
         messages.success(request, "Video moved to another section.")
     return redirect('edit_course_structure', new_section.course.id)
+
+
+@csrf_exempt
+def toggle_course_active(request, course_id):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        is_active = data.get("is_active", False)
+
+        
+        course = Course.objects.get(id=course_id)
+
+        if course.teacher != request.user:
+            return JsonResponse({"status": "error", "message": "You do not have permission to move this Course."}, status=404)
+        try:
+
+            
+            video_count = Video.objects.filter(section__course=course).count()
+            if is_active and video_count < 5:
+                message = "There must be at least 5 videos to activate the course."
+                return JsonResponse({"status": "error", "message": message})
+
+            course.is_active = is_active
+            course.save()
+
+            message = f"{course.title} successfully {'activated' if is_active else 'deactivated'}."            
+            return JsonResponse({"status": "ok", "message": message})
+
+        except Course.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Course not found."}, status=404)
+
+    return JsonResponse({"status": "error", "message": "Invalid request."}, status=400)

@@ -13,4 +13,5 @@ urlpatterns = [
     path('save_note/<int:video_id>/', views.SaveNoteView.as_view(), name='save_note'),
     path('<int:id>', views.course_details_id, name='course_details_id'),
     path('<str:id>', views.course_details, name='course_details'),
+    
 ]

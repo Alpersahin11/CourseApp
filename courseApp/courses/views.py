@@ -2,8 +2,6 @@ import json
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponse
 from django.urls import reverse
-
-from core.recommend import recommend_similar_courses
 from .models import Category, Course
 from account.models import Enrollment, Profile 
 from django.core.paginator import Paginator ,EmptyPage, PageNotAnInteger
@@ -12,18 +10,20 @@ from django.contrib import messages
 from account.models import VideoProgress
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from teachers.models import Video
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import login_required
 from django.views import View
 from account.models import VideoProgress
 from teachers.models import Video
-from django.views.decorators.http import require_POST
-
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.http import JsonResponse
+from django.utils import timezone
+import json
 
 def login(user):
     return user.is_authenticated
@@ -187,36 +187,58 @@ def course_detail(request, id):
     if course in request.user.profile.enrolled_courses.all() or course.teacher == request.user:
         profile = request.user.profile
         watched_videos = VideoProgress.objects.filter(student=profile, watched=True).values_list('video_id', flat=True)
-        # Varsayılan ilk videoyu al
-        first_video = None
-        if course.sections.exists():
+
+        # URL'den video_id al
+        selected_video_id = request.GET.get('video_id')
+
+        selected_video = None
+        if selected_video_id:
+            selected_video = Video.objects.filter(id=selected_video_id, section__course=course).first()
+
+        if not selected_video and course.sections.exists():
             first_section = course.sections.first()
             if first_section.videos.exists():
-                first_video = first_section.videos.first()
+                selected_video = first_section.videos.first()
 
         existing_note = ''
-        if first_video:
-            vp = VideoProgress.objects.filter(student=profile, video=first_video).first()
+        if selected_video:
+            vp = VideoProgress.objects.filter(student=profile, video=selected_video).first()
             if vp:
                 existing_note = vp.note
+
+        if selected_video and selected_video.duration:
+            total_seconds = int(selected_video.duration.total_seconds())
+            minutes = total_seconds // 60
+            seconds = total_seconds % 60
+            formatted_duration = f"{minutes}:{seconds:02d}"
+        else:
+            formatted_duration = None
+
+        video_durations = {}
+        for section in course.sections.all():
+            for video in section.videos.all():
+                if video.duration:
+                    total_seconds = int(video.duration.total_seconds())
+                    minutes = total_seconds // 60
+                    seconds = total_seconds % 60
+                    video_durations[video.id] = f"{minutes}:{seconds:02d}"
+
 
         context = {
             'course': course,
             'watched_videos': set(watched_videos),
             'existing_note': existing_note,
-            'video': first_video,
+            'video': selected_video,
+            'video_durations': video_durations,
+            'formatted_duration': formatted_duration,
+            'selected_video_id': int(selected_video_id) if selected_video_id else (selected_video.id if selected_video else None),
         }
         return render(request, 'teachers/course_detail.html', context)
     else:
         messages.error(request, "You are not enrolled in this course.")
         return redirect("course_details_id", id=id)
 
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
-from django.http import JsonResponse
-from django.utils import timezone
-import json
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class SaveNoteView(View):
