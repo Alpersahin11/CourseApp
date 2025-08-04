@@ -1,0 +1,44 @@
+{% extends "_layout.html" %}
+{% load static %} 
+
+{% block title %}Teacher Requests{% endblock %}
+
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Instructor Application List</h2>
+
+  <table class="table table-bordered table-striped">
+    <thead class="table-dark">
+      <tr class = "text-center">
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for req in requests %}
+      <tr class = "text-center" >
+        <td>{{ req.teacher.get_full_name }}</td>
+        <td>{{ req.teacher.email }}</td>
+        <td>{{ req.status }}</td>
+        <td class="text-center">
+        {% if req.status == 'pending' %}
+            <a href="{% url 'approve_teacher_request' req.id %}" class="btn btn-success btn-sm me-1">Approve</a>
+            <a href="{% url 'reject_teacher_request' req.id %}" class="btn btn-danger btn-sm">Reject</a>
+        {% else %}
+            <span class="text-muted">Processed</span>
+        {% endif %}
+        </td>
+
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-center">There are no applications yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

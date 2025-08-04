@@ -29,10 +29,11 @@
 
         {% if is_teacher %}
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'teacher_courses' %}">Admin Courses</a>
+          <a class="nav-link" href="{% url 'teacher_courses' %}">Teacher Courses</a>
         </li>
         {% endif %}
 
+       
       </ul>
 
 <form class="d-flex" action="{% url 'course' %}">
@@ -57,9 +58,24 @@
         </li>
 
         {% else %}
+
+        {% if request.user.is_superuser %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Admin Panel
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="adminMenu">
+            <li><a class="dropdown-item" href="{% url 'edit_profile' %}">Edit Profile</a></li>
+            <li><a class="dropdown-item" href="{% url 'teacher_requests' %}">Teacher Requests</a></li>
+            <li><a class="dropdown-item" href="{% url 'manage_categories' %}">Add Category</a></li>
+          </ul>
+        </li>
+        {% else %}
         <li class="nav-item">
           <a class="nav-link" href="{% url "edit_profile" %}">{{user.username}}</a>
         </li>
+        {% endif %}
+        
         <li class="nav-item">
           <a class="nav-link" href="{% url 'user_logout' %}">logout</a>
         </li>

@@ -1,11 +1,10 @@
 import json
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import HttpResponse, JsonResponse
-from django.urls import reverse
-from .models import Section, Video
+from django.http import JsonResponse
+from .models import Section, TeacherRequest, Video
 from courses.models import Category, Course
 from account.models import Profile
-from django.core.paginator import Paginator ,EmptyPage, PageNotAnInteger
+from django.core.paginator import Paginator
 from .form.course_edit import course_control
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
@@ -13,11 +12,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Course, Section, Video
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.core.files.storage import FileSystemStorage
 from moviepy import VideoFileClip
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import Group
 
-import os
 from django.core.files.storage import default_storage
 
 def login(user):
@@ -358,3 +356,67 @@ def toggle_course_active(request, course_id):
             return JsonResponse({"status": "error", "message": "Course not found."}, status=404)
 
     return JsonResponse({"status": "error", "message": "Invalid request."}, status=400)
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def teacher_requests(request):
+    requests = TeacherRequest.objects.filter(status="Pending")
+    return render(request, 'teachers/teacher_requests.html', {"requests": requests})
+
+@user_passes_test(lambda u: u.is_superuser)
+def approve_teacher_request(request, request_id):
+    req = get_object_or_404(TeacherRequest, id=request_id)
+    req.status = 'Approved'
+    req.save()
+
+    # Kullanıcının profilini güncelle (teacher alanını kullan)
+    profile = get_object_or_404(Profile, user=req.teacher)
+    profile.is_teacher = True
+    profile.save()
+
+    try:
+        teacher_group = Group.objects.get(name='Teacher')
+        req.teacher.groups.add(teacher_group)
+    except Group.DoesNotExist:
+        pass  
+
+    return redirect('teacher_requests')
+
+@user_passes_test(lambda u: u.is_superuser)
+def reject_teacher_request(request, request_id):
+    req = get_object_or_404(TeacherRequest, id=request_id)
+    req.status = 'Rejected'
+    req.save()
+    return redirect('teacher_requests')
+
+@user_passes_test(lambda u: u.is_superuser)
+def manage_categories(request, edit_id=None):
+    categories = Category.objects.all()
+    form = CategoryForm()
+    edit_form = None
+    category_to_edit = None
+
+    # Kategori ekleme
+    if request.method == 'POST' and not edit_id:
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('manage_categories')
+
+    # Kategori düzenleme
+    if edit_id:
+        category_to_edit = get_object_or_404(Category, id=edit_id)
+        if request.method == 'POST':
+            edit_form = CategoryForm(request.POST, instance=category_to_edit)
+            if edit_form.is_valid():
+                edit_form.save()
+                return redirect('manage_categories')
+        else:
+            edit_form = CategoryForm(instance=category_to_edit)
+
+    return render(request, 'courses/manage_categories.html', {
+        'categories': categories,
+        'form': form,
+        'edit_form': edit_form,
+        'edit_id': edit_id,
+    })

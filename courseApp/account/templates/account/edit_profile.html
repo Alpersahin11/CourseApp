@@ -145,12 +145,21 @@
         </div>
        {% elif active_tab == 'account-info' %} 
         <div class="container text-center my-4">
-          <div class="alert alert-warning" role="alert">
-            You are not an instructor. Only instructors can access this section.
-          </div>
-          <a href="{% url 'become_instructor' %}" class="btn btn-success">Become an Instructor</a>
+          {% if teacher_request_status %}
+            <div class="alert alert-info" role="alert">
+              Your instructor application is <strong>{{ teacher_request_status }}</strong>.
+            </div>
+          {% else %}
+            <div class="alert alert-warning" role="alert">
+              You are not an instructor. Only instructors can access this section.
+            </div>
+            <a href="{% url 'become_instructor' %}" class="btn btn-success">
+              Become an Instructor
+            </a>
+          {% endif %}
         </div>
       {% endif %}
+
 
         </div>
       </div>

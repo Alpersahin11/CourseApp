@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib.auth.models import Group
 from account.forms import CustomPasswordChangeForm, ProfileForm, UserForm,UserEditForm
+from teachers.models import TeacherRequest
 from .models import Profile 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
@@ -74,6 +75,9 @@ def edit_profile(request):
     profile_form = ProfileForm(instance=profile)
     password_form = CustomPasswordChangeForm(user=request.user)
 
+    teacher_request = TeacherRequest.objects.filter(teacher=request.user).first()
+    teacher_request_status = teacher_request.status if teacher_request else None
+
     if request.method == 'POST':
         active_tab = request.POST.get('active_tab', 'account-general') 
 
@@ -114,7 +118,8 @@ def edit_profile(request):
         'profile_form': profile_form,
         'password_form': password_form,
         'active_tab': active_tab,
-        'profile': profile
+        'profile': profile,
+        "teacher_request_status": teacher_request_status,
     }
 
     return render(request, 'account/edit_profile.html', context)
@@ -122,18 +127,12 @@ def edit_profile(request):
 @login_required
 def become_instructor(request):
     user = request.user
-    profile = user.profile
+    existing_request = TeacherRequest.objects.filter(teacher=user).first()
 
-    # Profil güncelle
-    profile.is_teacher = True
-    profile.save()
-
-    # Grup kontrolü ve ekleme
-    teacher_group, created = Group.objects.get_or_create(name="Teacher")
-    user.groups.add(teacher_group)
-
-    messages.success(request, "You are now an instructor!")
-    return redirect('edit_profile')
+    if not existing_request:
+        TeacherRequest.objects.create(teacher=user)
+    
+    return redirect('edit_profile')  
 
 
 def user_logout(request):

@@ -31,4 +31,8 @@ urlpatterns = [
     path('video/delete/<int:video_id>', views.delete_video, name='delete_video'),
     
     path("toggle_active/<int:course_id>/", views.toggle_course_active, name="toggle_course_active"),
+    path('teacher_requests/', views.teacher_requests, name='teacher_requests'),
+    path('approve/<int:request_id>/', views.approve_teacher_request, name='approve_teacher_request'),
+    path('reject/<int:request_id>/', views.reject_teacher_request, name='reject_teacher_request'),
+
 ]

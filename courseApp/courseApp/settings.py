@@ -43,11 +43,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'account.apps.AccountConfig',
     'django_ckeditor_5',
+    'widget_tweaks',
     'courses',
-    'account',
     'core',
     'teachers',
+
     
 ]
 

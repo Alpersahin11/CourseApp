@@ -35,6 +35,8 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    def course_count(self):
+        return self.courses.count()
 
 from django.db import models
 
@@ -47,6 +49,7 @@ class Course(models.Model):
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     is_active = models.BooleanField(default=False)
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    is_home = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if not self.slug:

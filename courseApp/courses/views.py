@@ -2,6 +2,8 @@ import json
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponse
 from django.urls import reverse
+
+from courses.forms import CategoryForm
 from .models import Category, Course
 from account.models import Enrollment, Profile 
 from django.core.paginator import Paginator ,EmptyPage, PageNotAnInteger
@@ -37,7 +39,7 @@ def is_course_teacher(user, course):
 def course(request):
     course_name = request.GET.get("q","")
     categories_data = Category.objects.all()
-    courses = Course.objects.filter(title__contains = course_name)
+    courses = Course.objects.filter(title__contains = course_name,is_active = True)
     page = Paginator(courses, 9)  
     page_number = request.GET.get('page', 1)
 
@@ -60,7 +62,7 @@ def source_course(request):
  
     course_name = request.GET.get("q","")
     categories_data = Category.objects.all()
-    courses = Course.objects.filter(title__contains = course_name)
+    courses = Course.objects.filter(title__contains = course_name,is_active = True)
 
     page = Paginator(courses, 10) 
     page_number = request.GET.get('page', 1)
@@ -141,10 +143,8 @@ def categorie(request, id):
     try:
         page_obj = page.page(page_number)
     except PageNotAnInteger:
-        # Sayfa sayısı integer değilse, ilk sayfayı göster
         page_obj = page.page(1)
     except EmptyPage:
-        # Sayfa yoksa, son sayfayı göster
         page_obj = page.page(page.num_pages)
 
 
@@ -152,8 +152,6 @@ def categorie(request, id):
         "page_obj": page_obj,
         "categories_data": categories_data,  
     }
-
-
 
     return render(request, 'courses/course.html', context)
 
@@ -169,10 +167,8 @@ def enroll_course(request, id):
     if Enrollment.objects.filter(student=profile, course=course).exists():
         return redirect("course_detail", id=course.id)
 
-    # Create enrollment record
     Enrollment.objects.create(student=profile, course=course)
 
-    # Optionally update ManyToMany relationship (suitable for your case)
     profile.enrolled_courses.add(course)
 
     messages.success(request, "You have successfully enrolled in the course.")
@@ -188,7 +184,6 @@ def course_detail(request, id):
         profile = request.user.profile
         watched_videos = VideoProgress.objects.filter(student=profile, watched=True).values_list('video_id', flat=True)
 
-        # URL'den video_id al
         selected_video_id = request.GET.get('video_id')
 
         selected_video = None
@@ -300,3 +295,42 @@ class VideoWatchedView(View):
             progress.save()
 
         return JsonResponse({'status': 'ok'})
+    
+    
+@user_passes_test(lambda u: u.is_superuser)
+def manage_categories(request, edit_id=None):
+    categories = Category.objects.all()
+    form = CategoryForm()
+    edit_form = None
+    category_to_edit = None
+
+    # Kategori ekleme
+    if request.method == 'POST' and not edit_id:
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('manage_categories')
+
+    # Kategori düzenleme
+    if edit_id:
+        category_to_edit = get_object_or_404(Category, id=edit_id)
+        if request.method == 'POST':
+            edit_form = CategoryForm(request.POST, instance=category_to_edit)
+            if edit_form.is_valid():
+                edit_form.save()
+                return redirect('manage_categories')
+        else:
+            edit_form = CategoryForm(instance=category_to_edit)
+
+    return render(request, 'courses/manage_categories.html', {
+        'categories': categories,
+        'form': form,
+        'edit_form': edit_form,
+        'edit_id': edit_id,
+    })
+
+@user_passes_test(lambda u: u.is_superuser)
+def delete_category(request, id):
+    category = get_object_or_404(Category, id=id)
+    category.delete()
+    return redirect('manage_categories')
