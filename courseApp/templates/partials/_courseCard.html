@@ -38,20 +38,19 @@
       </a>
     </p>
 
-    <!-- Öğrenci sayısı -->
     <div class="text-muted d-flex align-items-center">
       <i class="bi bi-people-fill me-1"></i>
       <small>{{ course.enrolled_students.count }} students</small>
     </div>
-  </div>
+    </div>
 
-  <!-- Detay butonu -->
-  <a href="{% url 'course_details' course.slug %}" class="btn btn-outline-primary w-100 mt-3 shadow-sm rounded-pill">
-    <i class="bi bi-arrow-right-circle me-1"></i> Details
-  </a>
-</div>
+    
+      <a href="{% url 'course_details' course.slug %}" class="btn btn-outline-primary w-100 mt-3 shadow-sm rounded-pill">
+        <i class="bi bi-arrow-right-circle me-1"></i> View Details
+      </a>
+    
+    </div>
 
-      
     </div>
   </div>
 </div>

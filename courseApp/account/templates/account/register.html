@@ -1,5 +1,7 @@
-{% extends "_layout.html" %} {% load static %} 
-{% block title %} CourseApp Home{% endblock %} 
+{% extends "_layout.html" %} 
+{% load static %} 
+
+{% block title %} CourseApp Register{% endblock %} 
 
 {% block content %}
 
@@ -7,7 +9,7 @@
   <div class="row">
     <div class="col-12">
       <p class="text-center fs-2">
-        <strong>Login</strong>
+        <strong>Sign Up</strong>
       </p>
     </div>
   </div>
@@ -16,8 +18,9 @@
     <div class="col-12">
       <div class="row justify-content-center">
         <form method="post">
-          {% csrf_token %} {{ form.as_p }}
-          <button type="submit">Kayıt Ol</button>
+          {% csrf_token %} 
+          {{ form.as_p }}
+          <button type="submit">Sign Up</button>
         </form>
       </div>
     </div>

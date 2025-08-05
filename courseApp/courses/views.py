@@ -42,7 +42,6 @@ def course(request):
     courses = Course.objects.filter(title__contains = course_name,is_active = True)
     page = Paginator(courses, 9)  
     page_number = request.GET.get('page', 1)
-
     try:
         page_obj = page.page(page_number)
     except PageNotAnInteger:
@@ -89,7 +88,7 @@ def student_courses(request):
 
     page = Paginator(courses, 10)  
     page_number = request.GET.get('page', 1)
-
+    
     try:
         page_obj = page.page(page_number)
     except PageNotAnInteger:

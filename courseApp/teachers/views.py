@@ -1,6 +1,8 @@
 import json
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
+
+from courses.forms import CategoryForm
 from .models import Section, TeacherRequest, Video
 from courses.models import Category, Course
 from account.models import Profile
@@ -342,7 +344,7 @@ def toggle_course_active(request, course_id):
 
             
             video_count = Video.objects.filter(section__course=course).count()
-            if is_active and video_count < 5:
+            if is_active and video_count < 1:
                 message = "There must be at least 5 videos to activate the course."
                 return JsonResponse({"status": "error", "message": message})
 
@@ -360,7 +362,7 @@ def toggle_course_active(request, course_id):
 
 @user_passes_test(lambda u: u.is_superuser)
 def teacher_requests(request):
-    requests = TeacherRequest.objects.filter(status="Pending")
+    requests = TeacherRequest.objects.filter(status="pending")
     return render(request, 'teachers/teacher_requests.html', {"requests": requests})
 
 @user_passes_test(lambda u: u.is_superuser)

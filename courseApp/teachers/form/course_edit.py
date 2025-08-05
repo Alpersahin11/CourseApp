@@ -1,6 +1,7 @@
 from courses.models import Course
 from django.forms import ModelForm, TextInput, Textarea, ClearableFileInput, SelectMultiple
 from PIL import Image
+from django_ckeditor_5.fields import CKEditor5Widget
 
 class course_control(ModelForm):
     def __init__(self, *args, **kwargs):
@@ -12,7 +13,7 @@ class course_control(ModelForm):
         fields = ["title", "description", "img", "category"]
         widgets = {
             "title": TextInput(attrs={"class": "form-control"}),
-            "description": Textarea(attrs={"class": "form-control", "rows": 4}),
+            "description": CKEditor5Widget(config_name='extends'),
             "img": ClearableFileInput(attrs={"class": "form-control"}),
             "category": SelectMultiple(attrs={"class": "form-select", "size": "5"}),
         }
