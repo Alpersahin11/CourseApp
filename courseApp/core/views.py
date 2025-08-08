@@ -2,11 +2,12 @@ from django.shortcuts import render
 from core.recommend import recommend_similar_courses
 from courses.models import Category, Course
 from django.db.models import Count
+from django.core.cache import cache
 
 # Create your views here.
 
 def home(request):
-    categories = Category.objects.all()
+    categories = cache.get_or_set("category",lambda: Category.objects.all(),60*5)
     categories_with_courses = []
 
     if request.user.is_authenticated:

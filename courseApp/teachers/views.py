@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 from moviepy import VideoFileClip
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import Group
+from django.core.cache import cache
 
 from django.core.files.storage import default_storage
 
@@ -25,7 +26,6 @@ def login(user):
 
 def is_teacher(user):
     return user.groups.filter(name='Teacher').exists()
-
 
 
 def teacher_details(request,id):
@@ -41,7 +41,7 @@ def is_teacher(user):
 
 @login_required
 def course_detail(request, id):
-    course = get_object_or_404(Course, id=id)
+    course = cache.get_or_set(f"course_{id}",lambda: get_object_or_404(Course, id=id), 60*5 )
     return render(request, "teachers/course_detail.html", {"course": course})
 
 
@@ -70,7 +70,7 @@ def create_course(request):
 @login_required
 @user_passes_test(is_teacher)
 def edit_course(request, id):
-    course = get_object_or_404(Course, pk=id)
+    course = cache.get_or_set(f"course_{id}",lambda: get_object_or_404(Course, id=id), 60*5 )
     if course.teacher != request.user:
         messages.error(request, "You do not have permission to edit this course.")
         return redirect("student_courses")
@@ -94,7 +94,7 @@ def edit_course(request, id):
 @login_required
 @user_passes_test(is_teacher)
 def delete_course(request, id):
-    course = get_object_or_404(Course, pk=id)
+    course = cache.get_or_set(f"course_{id}",lambda: get_object_or_404(Course, id=id), 60*5 )
     if course.teacher != request.user:
         messages.error(request, "You do not have permission to delete this course.")
         referer = request.META.get('HTTP_REFERER')
@@ -114,8 +114,8 @@ def delete_course(request, id):
 @login_required
 @user_passes_test(is_teacher)
 def teacher_courses(request):
-    categories_data = Category.objects.all()
-    courses = Course.objects.filter(teacher=request.user)
+    categories_data = cache.get_or_set("category",lambda: Category.objects.all(),60*5 ) 
+    courses = cache.get_or_set("course_teacher_request.user",lambda: Course.objects.filter(teacher=request.user),60*5 )  
 
     paginator = Paginator(courses, 10)
     page_number = request.GET.get('page', 1)
@@ -134,14 +134,14 @@ def teacher_courses(request):
 
 @login_required
 def course_video_details(request, id):
-    course = get_object_or_404(Course, id=id)
+    course = cache.get_or_set(f"course_{id}",lambda: get_object_or_404(Course, id=id), 60*5 )
     return render(request, "courses/course_video_details.html", {"course": course})
 
 
 @login_required
 @user_passes_test(is_teacher)
 def edit_course_structure(request, course_id):
-    course = get_object_or_404(Course, id=course_id)
+    course = cache.get_or_set(f"course_{course_id}",lambda: get_object_or_404(Course, id=course_id), 60*5 )
     if course.teacher != request.user:
         messages.error(request, "You do not have permission to edit this course.")
         return redirect('home')
@@ -152,7 +152,7 @@ def edit_course_structure(request, course_id):
 @user_passes_test(is_teacher)
 @require_POST
 def add_section(request, course_id):
-    course = get_object_or_404(Course, id=course_id)
+    course = cache.get_or_set(f"course_{course_id}",lambda: get_object_or_404(Course, id=course_id), 60*5 )
     if course.teacher != request.user:
         messages.error(request, "You do not have permission to add sections.")
         return redirect('home')
@@ -168,7 +168,7 @@ def add_section(request, course_id):
 @user_passes_test(is_teacher)
 @require_POST
 def add_video(request, section_id):
-    section = get_object_or_404(Section, id=section_id)
+    section = cache(f"section_{section_id}",get_object_or_404(Section, id=section_id),60*5) 
     if section.course.teacher != request.user:
         messages.error(request, "You do not have permission to add videos.")
         return redirect('home')
@@ -201,7 +201,7 @@ def add_video(request, section_id):
 @login_required
 @user_passes_test(is_teacher)
 def move_section_up(request, section_id):
-    section = get_object_or_404(Section, id=section_id)
+    section = cache(f"section_{section_id}",get_object_or_404(Section, id=section_id),60*5) 
     if section.course.teacher != request.user:
         messages.error(request, "You do not have permission to modify sections.")
         return redirect('home')
@@ -217,12 +217,13 @@ def move_section_up(request, section_id):
 @login_required
 @user_passes_test(is_teacher)
 def move_section_down(request, section_id):
-    section = get_object_or_404(Section, id=section_id)
+    section = cache(f"section_{section_id}",get_object_or_404(Section, id=section_id),60*5) 
     if section.course.teacher != request.user:
         messages.error(request, "You do not have permission to modify sections.")
         return redirect('home')
 
     next_section = Section.objects.filter(course=section.course, order__gt=section.order).order_by('order').first()
+
     if next_section:
         section.order, next_section.order = next_section.order, section.order
         section.save()

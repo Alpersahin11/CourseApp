@@ -17,6 +17,7 @@ from django.contrib import messages
 from .forms import UserForm
 from .models import Profile 
 
+
 def user_login(request):
 
     if request.user.is_authenticated:
